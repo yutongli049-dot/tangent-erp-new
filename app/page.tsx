@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link"; // ✅ 引入 Link 用于页面跳转
+import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,7 +22,7 @@ export default function Home() {
         
         {/* 1) 核心财务卡片 */}
         <Card className="relative overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-          {/* 顶部强调线 */}
+          {/* 顶部强调线：SaaS 风格的单色细线 */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-indigo-500/80" />
 
           <CardHeader className="flex flex-row items-center justify-between space-y-0 px-7 pt-7 pb-3">
@@ -103,7 +103,7 @@ export default function Home() {
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* ✅ 按钮 1: 记一笔 (改为 Link 跳转) */}
+            {/* 按钮 1: 记一笔 (Indigo 主题) */}
             <Link 
               href="/finance/add" 
               className="group relative flex h-24 flex-col items-center justify-center rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all active:scale-[0.99] hover:-translate-y-[1px] hover:shadow-[0_10px_25px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-indigo-200/70"
@@ -116,15 +116,18 @@ export default function Home() {
               </span>
             </Link>
 
-            {/* 按钮 2: 新建预约 (暂时保留为 button，或者你可以改成 Link href="/bookings/new") */}
-            <button className="group relative flex h-24 flex-col items-center justify-center rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all active:scale-[0.99] hover:-translate-y-[1px] hover:shadow-[0_10px_25px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-indigo-200/70">
+            {/* 按钮 2: 新建预约 (Slate 主题，保持克制) */}
+            <Link
+              href="/bookings/new"
+              className="group relative flex h-24 flex-col items-center justify-center rounded-2xl border border-slate-200/70 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-all active:scale-[0.99] hover:-translate-y-[1px] hover:shadow-[0_10px_25px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-indigo-200/70"
+            >
               <div className="mb-2 rounded-xl border border-slate-200/70 bg-slate-50 p-3 text-slate-700 transition-transform duration-200 group-hover:scale-[1.05]">
                 <CalendarPlus className="h-6 w-6" />
               </div>
               <span className="text-sm font-semibold text-slate-800">
                 新建预约
               </span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
