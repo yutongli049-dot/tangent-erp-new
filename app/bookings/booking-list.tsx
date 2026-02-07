@@ -18,7 +18,7 @@ type Booking = {
   student: {
     id: string;
     name: string;
-    teacher: string | null; // ✅ 新增老师字段
+    teacher: string | null;
   } | null;
   business_unit_id: string;
 };
