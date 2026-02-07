@@ -13,9 +13,10 @@ export const config = {
      * - _next/static (静态文件)
      * - _next/image (图片优化)
      * - favicon.ico (图标)
-     * - login (登录页自己不能被保护，否则死循环)
-     * - auth (如果未来有 API 路由)
+     * - login (登录页)
+     * - auth (认证回调)
+     * - api (✅ 新增：排除 API 接口，允许日历等外部工具在未登录状态下访问)
      */
-    "/((?!_next/static|_next/image|favicon.ico|login|auth).*)",
+    "/((?!_next/static|_next/image|favicon.ico|login|auth|api).*)",
   ],
 };
