@@ -6,64 +6,87 @@ export async function getDashboardStats(businessId: string) {
   const supabase = await createClient();
   const now = new Date();
   
-  // 1. 获取本月第一天和最后一天
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  // 本月起止时间
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
 
-  // 构建基础查询过滤器
-  // 如果是 'tangent' (集团视角)，我们暂时不加 business_unit_id 过滤，或者你也可以选择只看特定几个
-  // 这里为了简单，如果 businessId 不是 'tangent'，就严格过滤
-  const isGroupView = businessId === 'tangent';
-
-  // --- A. 计算本月净收入 (Income - Expense) ---
-  let incomeQuery = supabase
+  // 1. 获取本月所有流水
+  const { data: transactions } = await supabase
     .from("transactions")
-    .select("amount, type")
-    .gte("transaction_date", startOfMonth)
-    .lte("transaction_date", endOfMonth);
-  
-  if (!isGroupView) incomeQuery = incomeQuery.eq("business_unit_id", businessId);
-  
-  const { data: transactions } = await incomeQuery;
+    .select("amount, type, transaction_date")
+    .eq("business_unit_id", businessId)
+    .gte("transaction_date", firstDay)
+    .lte("transaction_date", lastDay)
+    .order("transaction_date");
 
-  let totalIncome = 0;
-  if (transactions) {
-    const income = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    const expense = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    totalIncome = income - expense;
+  // 处理图表数据
+  const dailyMap: Record<string, { date: string; income: number; expense: number }> = {};
+  let totalCashIncome = 0;
+  let totalExpense = 0;
+
+  transactions?.forEach(t => {
+    const day = t.transaction_date.split('T')[0];
+    const val = Number(t.amount);
+    
+    if (!dailyMap[day]) dailyMap[day] = { date: day, income: 0, expense: 0 };
+    
+    if (t.type === 'income') {
+      totalCashIncome += val;
+      dailyMap[day].income += val;
+    } else {
+      totalExpense += val;
+      dailyMap[day].expense += val;
+    }
+  });
+
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const chartData = [];
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    chartData.push(dailyMap[dayStr] || { date: dayStr, income: 0, expense: 0 });
   }
 
-  // --- B. 计算活跃学员总数 ---
-  let studentQuery = supabase
-    .from("students")
-    .select("id", { count: "exact", head: true }); // 只数数，不拿数据，省流量
-
-  if (!isGroupView) studentQuery = studentQuery.eq("business_unit_id", businessId);
-  
-  const { count: studentCount } = await studentQuery;
-
-  // --- C. 计算未来 7 天的待完成课程 ---
-  const nextWeek = new Date();
-  nextWeek.setDate(now.getDate() + 7);
-
-  let bookingQuery = supabase
+  // 2. 计算消课产值
+  const { data: completedBookings } = await supabase
     .from("bookings")
-    .select("id", { count: "exact", head: true })
-    .gte("start_time", now.toISOString())
-    .lte("start_time", nextWeek.toISOString())
-    .neq("status", "cancelled"); // 排除已取消的
+    .select(`duration, student:students ( hourly_rate )`)
+    .eq("business_unit_id", businessId)
+    .eq("status", "completed")
+    .gte("start_time", firstDay)
+    .lte("start_time", lastDay);
 
-  if (!isGroupView) bookingQuery = bookingQuery.eq("business_unit_id", businessId);
+  const realizedRevenue = completedBookings?.reduce((sum, b: any) => {
+    return sum + (b.duration * (b.student?.hourly_rate || 0));
+  }, 0) || 0;
 
-  const { count: bookingCount } = await bookingQuery;
+  // 3. 计算待消课资金
+  const { data: allStudents } = await supabase
+    .from("students")
+    .select("balance, hourly_rate")
+    .eq("business_unit_id", businessId);
+
+  const unearnedRevenue = allStudents?.reduce((sum, s) => {
+    return sum + (Number(s.balance) * Number(s.hourly_rate || 0));
+  }, 0) || 0;
+
+  // 4. 获取日历数据 (✅ 新增 subject 字段)
+  const { data: calendarBookings } = await supabase
+    .from("bookings")
+    .select(`
+      id, start_time, end_time, duration, status, location, notes,
+      student:students(name, subject)
+    `)
+    .eq("business_unit_id", businessId)
+    .neq("status", "cancelled")
+    .gte("start_time", firstDay)
+    .lte("start_time", lastDay);
 
   return {
-    income: totalIncome,
-    studentCount: studentCount || 0,
-    bookingCount: bookingCount || 0,
+    cashIncome: totalCashIncome,
+    netCashFlow: totalCashIncome - totalExpense,
+    realizedRevenue,
+    unearnedRevenue,
+    chartData,
+    calendarBookings: calendarBookings || [],
   };
 }

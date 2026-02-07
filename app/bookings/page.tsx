@@ -8,20 +8,20 @@ import Link from "next/link";
 export default async function BookingsPage() {
   const supabase = await createClient();
 
-  // 关键：这里要关联查询 student 表获取名字
+  // ✅ 关键修改：select 中增加了 teacher 字段，用于排序
   const { data: bookings } = await supabase
     .from("bookings")
     .select(`
       *,
-      student:students ( id, name )
+      student:students ( id, name, teacher )
     `)
-    .order("start_time", { ascending: true }); // 按时间正序排，最近的在上面
+    .order("start_time", { ascending: true }); // 默认按时间正序，前端分组后再排
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
       <Navbar />
 
-      <div className="mx-auto max-w-xl px-6 py-8">
+      <div className="mx-auto max-w-2xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 hover:text-indigo-600">
@@ -40,7 +40,6 @@ export default async function BookingsPage() {
           </Link>
         </div>
 
-        {/* 只有这里需要客户端组件来处理交互 */}
         <BookingList bookings={bookings || []} />
       </div>
     </main>

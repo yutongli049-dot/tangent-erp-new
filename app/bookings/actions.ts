@@ -93,3 +93,19 @@ export async function cancelBooking(bookingId: string) {
   revalidatePath("/");
   return { success: true };
 }
+
+// 4. ✅ 新增：彻底删除预约 (Delete)
+export async function deleteBooking(bookingId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", bookingId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/bookings");
+  revalidatePath("/");
+  return { success: true };
+}
