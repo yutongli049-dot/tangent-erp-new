@@ -98,7 +98,6 @@ export function StudentList({ initialStudents }: { initialStudents: Student[] })
                 </div>
               </div>
 
-              {/* ✅ 删除按钮 (阻止冒泡) */}
               <Button
                 variant="ghost"
                 size="icon"
