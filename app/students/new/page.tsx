@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react"; // ✅ 修复：引入 FormEvent
 import { useRouter } from "next/navigation";
-import { createStudent } from "../actions"; // 确保引用了上面的 action
+import { createStudent } from "../actions"; 
 import { useBusiness } from "@/contexts/BusinessContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,11 +15,11 @@ export default function NewStudentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // ✅ 默认值设置：费率 70
   const [hourlyRate, setHourlyRate] = useState("70");
   const [balance, setBalance] = useState("0");
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // ✅ 修复：直接使用 FormEvent<HTMLFormElement>，不再写 React. 前缀
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
@@ -62,7 +62,6 @@ export default function NewStudentPage() {
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label>课时费率 (Hourly Rate)</Label>
-                {/* ✅ 默认值 70 */}
                 <div className="relative">
                   <span className="absolute left-3 top-3 text-slate-400">$</span>
                   <Input 
@@ -76,7 +75,6 @@ export default function NewStudentPage() {
               </div>
               <div className="space-y-2">
                 <Label>初始课时 (Initial Balance)</Label>
-                {/* ✅ 新增余额字段 */}
                 <div className="relative">
                   <Input 
                     name="balance" 
