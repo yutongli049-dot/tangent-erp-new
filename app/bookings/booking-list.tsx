@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import { useBusiness } from "@/contexts/BusinessContext";
-import { completeBooking, cancelBooking, deleteBooking, updateBooking } from "../bookings/actions"; // ✅ 引入 update
+import { completeBooking, cancelBooking, deleteBooking, updateBooking } from "./actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, MapPin, CheckCircle2, XCircle, User, Loader2, AlertCircle, Trash2, GraduationCap, Pencil } from "lucide-react";
+import { Clock, MapPin, CheckCircle2, XCircle, Loader2, Trash2, GraduationCap, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
-// ... Booking 和 StudentGroup 类型定义保持不变 ...
 type Booking = {
   id: string;
   start_time: string;
@@ -44,7 +43,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   const rawPending = filteredBookings.filter(b => b.status === 'confirmed');
   const rawHistory = filteredBookings.filter(b => b.status !== 'confirmed');
 
-  // 分组排序逻辑 (保持不变)
   const groupAndSort = (list: Booking[]): StudentGroup[] => {
     const groups: Record<string, StudentGroup> = {};
     list.forEach(b => {
@@ -65,17 +63,17 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   const groupedHistory = groupAndSort(rawHistory);
 
   // --- 操作函数 ---
-  const handleComplete = async (b: Booking) => { /* 保持不变 */ 
+  const handleComplete = async (b: Booking) => {
     if (!confirm(`确认完成课程？`)) return;
     setLoadingId(b.id);
     if (b.student?.id) await completeBooking(b.id, b.student.id, b.duration);
     setLoadingId(null);
   };
-  const handleCancel = async (id: string) => { /* 保持不变 */
+  const handleCancel = async (id: string) => {
     if (!confirm("确定取消这个预约吗？")) return;
     setLoadingId(id); await cancelBooking(id); setLoadingId(null);
   };
-  const handleDelete = async (id: string) => { /* 保持不变 */
+  const handleDelete = async (id: string) => {
     if (!confirm("彻底删除？")) return;
     setLoadingId(id); await deleteBooking(id); setLoadingId(null);
   };
@@ -84,33 +82,39 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   const openEdit = (b: Booking) => {
     const d = new Date(b.start_time);
     setEditingBooking(b);
+    // 这里 format 使用的是浏览器本地时间，所以 input 里显示的是 17:00 (正确)
     setEditDate(format(d, "yyyy-MM-dd"));
     setEditTime(format(d, "HH:mm"));
     setEditDuration(b.duration.toString());
     setEditLocation(b.location || "");
   };
 
-  // ✅ 保存编辑
+  // ✅ 核心修复：保存编辑 (解决时区问题)
   const saveEdit = async () => {
     if (!editingBooking) return;
     setLoadingId(editingBooking.id);
     
-    // 组合新时间
-    const newDateTimeStr = `${editDate}T${editTime}`; // 简单组合，后端会处理 ISO
+    // 1. 在浏览器端构造本地时间对象
+    // 例如：new Date("2026-02-01T17:00") -> 此时浏览器知道这是 NZDT
+    const localDateTime = new Date(`${editDate}T${editTime}`);
     
+    // 2. 转换为 ISO 字符串 (UTC)
+    // .toISOString() 会自动把 17:00 NZDT 转成 04:00 UTC 并带上 'Z'
+    const utcISOString = localDateTime.toISOString();
+
     await updateBooking(editingBooking.id, {
-      startTime: newDateTimeStr,
+      startTime: utcISOString, // 发给后端的是准确的 UTC 时间
       duration: Number(editDuration),
       location: editLocation
     });
     
-    setEditingBooking(null); // 关闭弹窗
+    setEditingBooking(null);
     setLoadingId(null);
   };
 
   const isOverdue = (dateStr: string) => new Date(dateStr) < new Date();
 
-  // Booking Card 组件
+  // Booking Card 组件 (保持不变，省略部分重复代码，核心逻辑在上面)
   const BookingCard = ({ booking, isActionable }: { booking: Booking, isActionable: boolean }) => {
     const overdue = isActionable && isOverdue(booking.start_time);
     return (
@@ -122,7 +126,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
             </Badge>
             <span className="text-xs font-medium text-slate-500">{new Date(booking.start_time).toLocaleDateString()}</span>
           </div>
-          {/* ✅ 编辑按钮 (只在待办状态显示) */}
           {isActionable && (
             <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-indigo-600" onClick={() => openEdit(booking)}>
               <Pencil className="h-3 w-3" />
@@ -197,7 +200,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
       <StudentSection title="📅 待处理课程 (Pending)" groups={groupedPending} isEmpty={groupedPending.length === 0} />
       <StudentSection title="🕒 归档记录 (History)" groups={groupedHistory} isEmpty={groupedHistory.length === 0} />
 
-      {/* ✅ 编辑弹窗 (Global Dialog) */}
       <Dialog open={!!editingBooking} onOpenChange={(open) => !open && setEditingBooking(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

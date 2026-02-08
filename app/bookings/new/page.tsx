@@ -34,10 +34,7 @@ export default function NewBookingPage() {
   useEffect(() => {
     async function fetchStudents() {
       const supabase = createClient();
-      const { data } = await supabase
-        .from("students")
-        .select("id, name")
-        .eq("business_unit_id", currentBusinessId);
+      const { data } = await supabase.from("students").select("id, name").eq("business_unit_id", currentBusinessId);
       if (data) setStudents(data);
     }
     if (currentBusinessId) fetchStudents();
@@ -47,7 +44,6 @@ export default function NewBookingPage() {
     if (!date || !studentId || !time) return alert("请填写完整信息");
     setLoading(true);
 
-    // 组合日期和时间
     const [hours, minutes] = time.split(':');
     const startDateTime = new Date(date);
     startDateTime.setHours(parseInt(hours), parseInt(minutes));
@@ -60,13 +56,9 @@ export default function NewBookingPage() {
     formData.append("businessId", currentBusinessId);
     formData.append("repeatCount", repeatCount);
 
-    // ✅ 修复点：这里传入 null 作为第一个参数 (prevState)
     const res = await createBooking(null, formData);
     
     setLoading(false);
-
-    //createBooking 返回可能是 undefined (如果void) 或者对象
-    //为了安全，我们加个判断
     if (res && 'error' in res && res.error) {
         alert("创建失败: " + res.error);
     } else {
@@ -78,125 +70,78 @@ export default function NewBookingPage() {
     <main className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
       <Card className="w-full max-w-lg p-6 space-y-8 shadow-lg">
         <div className="flex items-center gap-2 mb-2">
-          <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
           <h1 className="text-xl font-bold text-slate-900">新建预约</h1>
         </div>
 
         <div className="space-y-5">
-          {/* 1. 选择学员 */}
           <div className="space-y-2">
             <Label>学员 (Student)</Label>
             <Select onValueChange={setStudentId}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="选择学员..." />
-              </SelectTrigger>
+              <SelectTrigger className="h-11"><SelectValue placeholder="选择学员..." /></SelectTrigger>
               <SelectContent>
-                {students.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
+                {students.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
-          {/* 2. 日期与时间 (美化版) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>日期 (Date)</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-11",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
+                  <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal h-11", !date && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, "PPP", { locale: zhCN }) : <span>选个日子</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
-            
             <div className="space-y-2">
               <Label>时间 (Time)</Label>
-              <Input 
-                type="time" 
-                value={time} 
-                onChange={(e) => setTime(e.target.value)}
-                className="h-11"
-              />
+              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
             </div>
           </div>
 
-          {/* 3. 时长与循环 (Cycle) */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>时长 (Duration)</Label>
               <div className="flex items-center gap-2">
                 {[1, 1.5, 2].map((h) => (
-                  <Button
-                    key={h}
-                    variant={Number(duration) === h ? "default" : "outline"}
-                    className="flex-1 h-11"
-                    onClick={() => setDuration(h.toString())}
-                  >
-                    {h}h
-                  </Button>
+                  <Button key={h} variant={Number(duration) === h ? "default" : "outline"} className="flex-1 h-11" onClick={() => setDuration(h.toString())}>{h}h</Button>
                 ))}
               </div>
             </div>
 
-            {/* 循环排课 */}
+            {/* ✅ 修改点：自由输入循环周数 */}
             <div className="space-y-2">
               <Label className="flex items-center gap-1 text-indigo-600">
                 <Repeat className="h-3.5 w-3.5" /> 
-                周期 (每周一次)
+                周期 (周数)
               </Label>
-              <Select value={repeatCount} onValueChange={setRepeatCount}>
-                <SelectTrigger className="h-11 border-indigo-200 bg-indigo-50/30 focus:ring-indigo-500">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">单次课程 (Only once)</SelectItem>
-                  <SelectItem value="5">循环 5 周 (5 Weeks)</SelectItem>
-                  <SelectItem value="10">循环 10 周 (10 Weeks)</SelectItem>
-                  <SelectItem value="12">循环 1 学期 (12 Weeks)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input 
+                type="number" 
+                min="1" 
+                max="52" 
+                value={repeatCount} 
+                onChange={(e) => setRepeatCount(e.target.value)}
+                className="h-11 border-indigo-200 bg-indigo-50/30 focus:ring-indigo-500"
+                placeholder="例如: 10"
+              />
+              <p className="text-[10px] text-slate-400 text-right">填 1 代表仅一次，填 10 代表连排10周</p>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>地点 (Location)</Label>
-            <Input 
-              value={location} 
-              onChange={(e) => setLocation(e.target.value)} 
-              placeholder="例如：线上 / 图书馆 / 上门"
-              className="h-11"
-            />
+            <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="例如：线上 / 图书馆" className="h-11" />
           </div>
 
-          <Button 
-            className="w-full h-12 text-base font-bold bg-indigo-600 hover:bg-indigo-700 shadow-md mt-4" 
-            onClick={handleSubmit} 
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="animate-spin" /> : 
-             Number(repeatCount) > 1 
-               ? `批量创建 ${repeatCount} 节课程` 
-               : "确认预约 (Confirm)"
-            }
+          <Button className="w-full h-12 text-base font-bold bg-indigo-600 hover:bg-indigo-700 shadow-md mt-4" onClick={handleSubmit} disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : Number(repeatCount) > 1 ? `批量创建 ${repeatCount} 节课程` : "确认预约 (Confirm)"}
           </Button>
         </div>
       </Card>
