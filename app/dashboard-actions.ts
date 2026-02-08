@@ -6,7 +6,6 @@ export async function getDashboardStats(businessId: string) {
   const supabase = await createClient();
   const now = new Date();
   
-  // 本月起止时间
   const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
 
@@ -19,7 +18,7 @@ export async function getDashboardStats(businessId: string) {
     .lte("transaction_date", lastDay)
     .order("transaction_date");
 
-  // 处理图表数据
+  // 图表数据处理
   const dailyMap: Record<string, { date: string; income: number; expense: number }> = {};
   let totalCashIncome = 0;
   let totalExpense = 0;
@@ -27,9 +26,7 @@ export async function getDashboardStats(businessId: string) {
   transactions?.forEach(t => {
     const day = t.transaction_date.split('T')[0];
     const val = Number(t.amount);
-    
     if (!dailyMap[day]) dailyMap[day] = { date: day, income: 0, expense: 0 };
-    
     if (t.type === 'income') {
       totalCashIncome += val;
       dailyMap[day].income += val;
@@ -46,7 +43,7 @@ export async function getDashboardStats(businessId: string) {
     chartData.push(dailyMap[dayStr] || { date: dayStr, income: 0, expense: 0 });
   }
 
-  // 2. 计算消课产值
+  // 2. 核心指标计算
   const { data: completedBookings } = await supabase
     .from("bookings")
     .select(`duration, student:students ( hourly_rate )`)
@@ -55,21 +52,22 @@ export async function getDashboardStats(businessId: string) {
     .gte("start_time", firstDay)
     .lte("start_time", lastDay);
 
-  const realizedRevenue = completedBookings?.reduce((sum, b: any) => {
-    return sum + (b.duration * (b.student?.hourly_rate || 0));
-  }, 0) || 0;
+  const realizedRevenue = completedBookings?.reduce((sum, b: any) => sum + (b.duration * (b.student?.hourly_rate || 0)), 0) || 0;
 
-  // 3. 计算待消课资金
   const { data: allStudents } = await supabase
     .from("students")
-    .select("balance, hourly_rate")
+    .select("id, name, balance, hourly_rate") // 多查了 id 和 name
     .eq("business_unit_id", businessId);
 
-  const unearnedRevenue = allStudents?.reduce((sum, s) => {
-    return sum + (Number(s.balance) * Number(s.hourly_rate || 0));
-  }, 0) || 0;
+  const unearnedRevenue = allStudents?.reduce((sum, s) => sum + (Number(s.balance) * Number(s.hourly_rate || 0)), 0) || 0;
 
-  // 4. 获取日历数据 (✅ 新增 subject 字段)
+  // ✅ 新增：筛选余额不足的学生 (少于 3 课时)
+  // 并按余额从低到高排序
+  const lowBalanceStudents = allStudents
+    ?.filter(s => Number(s.balance) <= 3)
+    .sort((a, b) => Number(a.balance) - Number(b.balance)) || [];
+
+  // 3. 日历数据
   const { data: calendarBookings } = await supabase
     .from("bookings")
     .select(`
@@ -88,5 +86,6 @@ export async function getDashboardStats(businessId: string) {
     unearnedRevenue,
     chartData,
     calendarBookings: calendarBookings || [],
+    lowBalanceStudents, // ✅ 返回给前端
   };
 }
