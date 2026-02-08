@@ -34,7 +34,7 @@ export default function NewStudentPage() {
   // ✅ 定义不同公司的科目选项
   const subjects = currentBusinessId === 'sine' 
     ? ["Road Fam (新手上路)", "Restricted License (限制性)", "Full License (全驾照)"]
-    : ["NCEA L1 Math", "NCEA L2 Math", "NCEA L3 Math", "NCEA L1 Physics", "NCEA L2 Physics", "NCEA L3 Physics", "NCEA L1 Chemistry", "NCEA L2 Chemistry", "IG 1 Math", "IG 2 Math", "AS Math", "A2 Math", "IG 1 Physics", "IG 2 Physics", "AS Physics", "A2 Physics", "IG 1 Chemistry", "IG 2 Chemistry", "AS Chemistry", "A2 Chemistry"];
+    : ["NCEA L1 Math", "NCEA L2 Math", "NCEA L3 Math", "NCEA L1 Physics", "NCEA L2 Physics", "NCEA L3 Physics", "NCEA L1 Chemistry", "NCEA L2 Chemistry", "NCEA L3 Chemistry", "IG 1 Math", "IG 2 Math", "AS Math", "A2 Math", "IG 1 Physics", "IG 2 Physics", "AS Physics", "A2 Physics", "IG 1 Chemistry", "IG 2 Chemistry", "AS Chemistry", "A2 Chemistry"];
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
