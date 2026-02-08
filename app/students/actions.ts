@@ -21,7 +21,8 @@ export async function createStudent(prevState: any, formData: FormData) {
 
   const { error } = await supabase.from("students").insert({
     name,
-    student_id_code: studentId,
+    // ✅ 修复：映射到数据库已有的 'student_code' 字段
+    student_code: studentId, 
     subject,
     teacher,
     hourly_rate: Number(hourlyRate) || 70,
@@ -30,6 +31,7 @@ export async function createStudent(prevState: any, formData: FormData) {
   });
 
   if (error) {
+    console.error("Create Student Error:", error);
     return { error: error.message };
   }
 
@@ -38,7 +40,7 @@ export async function createStudent(prevState: any, formData: FormData) {
   return { success: true };
 }
 
-// 2. ✅ 新增：删除学员 (Delete)
+// 2. 删除学员 (Delete)
 export async function deleteStudent(studentId: string) {
   const supabase = await createClient();
 
@@ -53,7 +55,7 @@ export async function deleteStudent(studentId: string) {
   return { success: true };
 }
 
-// 3. ✅ 新增：学员充值 (Top Up)
+// 3. 学员充值 (Top Up)
 export async function topUpStudent(studentId: string, amount: number) {
   const supabase = await createClient();
 
@@ -76,9 +78,8 @@ export async function topUpStudent(studentId: string, amount: number) {
 
   if (error) return { error: error.message };
 
-  // 刷新相关页面
   revalidatePath(`/students/${studentId}`);
   revalidatePath("/students");
-  revalidatePath("/"); // 刷新首页资金池数据
+  revalidatePath("/");
   return { success: true };
 }
