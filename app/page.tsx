@@ -13,7 +13,7 @@ import {
   Loader2, ArrowUpRight, ChevronRight, AlertCircle,
   X, Clock, MapPin
 } from "lucide-react";
-import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday } from "date-fns";
 
 export default function Home() {
@@ -98,8 +98,8 @@ export default function Home() {
             </Card>
           </Link>
 
-          {/* Row 2: Cash Flow & Quick Actions (保持原有) */}
-          <Link href="/finance/transactions" className="col-span-12 md:col-span-8 group">
+          {/* Row 2: Cash Flow & Quick Actions */}
+          <Link href="/finance" className="col-span-12 md:col-span-8 group">
             <Card className="h-full border-slate-200 shadow-sm flex flex-col hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
               <CardHeader className="pb-2 border-b border-slate-50">
                 <div className="flex items-center justify-between">
@@ -153,7 +153,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* ✅ 新增 Row 2.5: 余额预警卡片 (Low Balance Alert) */}
+          {/* Row 2.5: Low Balance Alert */}
           {!loading && stats.lowBalanceStudents.length > 0 && (
             <Card className="col-span-12 border-rose-100 bg-rose-50/30">
               <CardHeader className="pb-2 pt-4 border-b border-rose-100">
@@ -229,9 +229,16 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ✅ 修复优化：弹窗交互 */}
       {isModalOpen && selectedDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-pointer"
+          onClick={() => setIsModalOpen(false)} // ✅ 点击背景关闭
+        >
+          <div 
+            className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
+            onClick={(e) => e.stopPropagation()} // ✅ 阻止点击内容区域时关闭
+          >
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div>
                 <h3 className="font-bold text-lg text-slate-900">{format(selectedDate, 'MMMM d, yyyy')}</h3>
