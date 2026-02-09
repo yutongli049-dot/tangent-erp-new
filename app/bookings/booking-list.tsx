@@ -9,8 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, MapPin, CheckCircle2, XCircle, Loader2, Trash2, GraduationCap, Pencil } from "lucide-react";
-import { format } from "date-fns";
+import { 
+  Clock, MapPin, Loader2, Trash2, Pencil, CheckCircle2, XCircle, 
+  ChevronDown, ChevronRight, Calendar, User, BookOpen 
+} from "lucide-react";
+import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { zhCN } from "date-fns/locale";
 
 type Booking = {
   id: string;
@@ -19,15 +23,15 @@ type Booking = {
   duration: number;
   status: string;
   location: string | null;
-  student: { id: string; name: string; teacher: string | null; } | null;
+  student: { id: string; name: string; teacher: string | null; subject: string | null; } | null;
   business_unit_id: string;
 };
-type StudentGroup = { studentId: string; studentName: string; teacherName: string; bookings: Booking[]; };
 
 export function BookingList({ bookings }: { bookings: Booking[] }) {
   const { currentBusinessId } = useBusiness();
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  
+  const [showHistory, setShowHistory] = useState(false); // ✅ 控制历史记录折叠
+
   // 编辑弹窗状态
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [editDate, setEditDate] = useState("");
@@ -35,32 +39,20 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   const [editDuration, setEditDuration] = useState("1");
   const [editLocation, setEditLocation] = useState("");
 
+  // 1. 筛选当前业务线数据
   const filteredBookings = bookings.filter((b) => {
     if (currentBusinessId === "tangent") return true;
     return b.business_unit_id === currentBusinessId;
   });
 
-  const rawPending = filteredBookings.filter(b => b.status === 'confirmed');
-  const rawHistory = filteredBookings.filter(b => b.status !== 'confirmed');
+  // 2. 分类：待办 vs 历史
+  const pendingBookings = filteredBookings
+    .filter(b => b.status === 'confirmed')
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()); // 按时间正序
 
-  const groupAndSort = (list: Booking[]): StudentGroup[] => {
-    const groups: Record<string, StudentGroup> = {};
-    list.forEach(b => {
-      const sId = b.student?.id || "unknown";
-      if (!groups[sId]) groups[sId] = { studentId: sId, studentName: b.student?.name || "未知", teacherName: b.student?.teacher || "未分配", bookings: [] };
-      groups[sId].bookings.push(b);
-    });
-    const groupArray = Object.values(groups);
-    groupArray.sort((a, b) => {
-      if (a.teacherName !== b.teacherName) return a.teacherName.localeCompare(b.teacherName, 'zh-CN');
-      return a.studentName.localeCompare(b.studentName, 'zh-CN');
-    });
-    groupArray.forEach(g => g.bookings.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()));
-    return groupArray;
-  };
-
-  const groupedPending = groupAndSort(rawPending);
-  const groupedHistory = groupAndSort(rawHistory);
+  const historyBookings = filteredBookings
+    .filter(b => b.status !== 'confirmed')
+    .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()); // 按时间倒序
 
   // --- 操作函数 ---
   const handleComplete = async (b: Booking) => {
@@ -78,128 +70,211 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     setLoadingId(id); await deleteBooking(id); setLoadingId(null);
   };
 
-  // ✅ 打开编辑弹窗
   const openEdit = (b: Booking) => {
     const d = new Date(b.start_time);
     setEditingBooking(b);
-    // 这里 format 使用的是浏览器本地时间，所以 input 里显示的是 17:00 (正确)
     setEditDate(format(d, "yyyy-MM-dd"));
     setEditTime(format(d, "HH:mm"));
     setEditDuration(b.duration.toString());
     setEditLocation(b.location || "");
   };
 
-  // ✅ 核心修复：保存编辑 (解决时区问题)
   const saveEdit = async () => {
     if (!editingBooking) return;
     setLoadingId(editingBooking.id);
-    
-    // 1. 在浏览器端构造本地时间对象
-    // 例如：new Date("2026-02-01T17:00") -> 此时浏览器知道这是 NZDT
     const localDateTime = new Date(`${editDate}T${editTime}`);
-    
-    // 2. 转换为 ISO 字符串 (UTC)
-    // .toISOString() 会自动把 17:00 NZDT 转成 04:00 UTC 并带上 'Z'
     const utcISOString = localDateTime.toISOString();
 
     await updateBooking(editingBooking.id, {
-      startTime: utcISOString, // 发给后端的是准确的 UTC 时间
+      startTime: utcISOString,
       duration: Number(editDuration),
       location: editLocation
     });
-    
     setEditingBooking(null);
     setLoadingId(null);
   };
 
-  const isOverdue = (dateStr: string) => new Date(dateStr) < new Date();
+  // --- 辅助组件：时间格式化 ---
+  const FormatDate = ({ dateStr }: { dateStr: string }) => {
+    const date = new Date(dateStr);
+    let label = format(date, "M月d日 (EEE)", { locale: zhCN });
+    if (isToday(date)) label = "今天 Today";
+    if (isTomorrow(date)) label = "明天 Tomorrow";
+    
+    const isOverdue = isPast(date) && !isToday(date);
 
-  // Booking Card 组件 (保持不变，省略部分重复代码，核心逻辑在上面)
-  const BookingCard = ({ booking, isActionable }: { booking: Booking, isActionable: boolean }) => {
-    const overdue = isActionable && isOverdue(booking.start_time);
     return (
-      <Card className={`flex flex-col gap-3 p-3 border-slate-200/60 shadow-sm transition-all ${overdue ? 'bg-amber-50/40 border-amber-200' : 'bg-white'}`}>
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
-            <Badge variant={booking.status === 'confirmed' ? (overdue ? 'destructive' : 'default') : booking.status === 'completed' ? 'secondary' : 'outline'} className="text-[10px] h-5 px-1.5">
-              {booking.status === 'confirmed' ? (overdue ? '逾期' : '待办') : booking.status === 'completed' ? '完成' : '取消'}
-            </Badge>
-            <span className="text-xs font-medium text-slate-500">{new Date(booking.start_time).toLocaleDateString()}</span>
-          </div>
-          {isActionable && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-indigo-600" onClick={() => openEdit(booking)}>
-              <Pencil className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-slate-700">
-          <div className="flex items-center gap-1">
-            <Clock className={`h-3.5 w-3.5 ${overdue ? 'text-amber-600' : 'text-indigo-500'}`} />
-            <span className="font-semibold">{new Date(booking.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            <span className="text-slate-400">({booking.duration}h)</span>
-          </div>
-          {booking.location && (
-            <div className="flex items-center gap-1 truncate max-w-[120px]">
-              <MapPin className="h-3.5 w-3.5 text-slate-400" />
-              {booking.location}
-            </div>
-          )}
-        </div>
-        
-        {isActionable ? (
-          <div className="mt-1 flex gap-2 pt-2 border-t border-slate-50">
-            <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-7 text-[10px]" onClick={() => handleComplete(booking)} disabled={loadingId === booking.id}>
-              {loadingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "完成"}
-            </Button>
-            <Button variant="outline" className="flex-1 h-7 text-[10px] hover:bg-rose-50 hover:text-rose-600" onClick={() => handleCancel(booking.id)} disabled={loadingId === booking.id}>取消</Button>
-          </div>
-        ) : (
-          <div className="mt-1 flex justify-end pt-2 border-t border-slate-50">
-             <button onClick={() => handleDelete(booking.id)} disabled={loadingId === booking.id} className="text-[10px] text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors">
-                {loadingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />} 删除
-             </button>
-          </div>
-        )}
-      </Card>
+      <div className="flex flex-col">
+        <span className={`text-sm font-bold ${isOverdue ? 'text-rose-600' : 'text-slate-700'}`}>{label}</span>
+        <span className="text-xs text-slate-400">{format(date, "yyyy-MM-dd")}</span>
+      </div>
     );
   };
 
-  const StudentSection = ({ groups, title, isEmpty }: { groups: StudentGroup[], title: string, isEmpty: boolean }) => (
-    <section className="space-y-4">
-      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 sticky top-16 bg-slate-50 py-2 z-10 border-b border-slate-200/50">
-        {title}
-        {!isEmpty && <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full">{groups.reduce((acc, g) => acc + g.bookings.length, 0)}</span>}
-      </h3>
-      {isEmpty ? <div className="p-8 text-center bg-white rounded-xl border border-dashed border-slate-200 text-slate-400 text-xs">暂无相关记录</div> : (
-        <div className="space-y-6">
-          {groups.map((group) => (
-            <div key={group.studentId} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-              <div className="bg-slate-50/50 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">{group.studentName.charAt(0).toUpperCase()}</div>
-                  <div>
-                    <div className="text-sm font-bold text-slate-800">{group.studentName}</div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500"><GraduationCap className="h-3 w-3" /> 老师: {group.teacherName}</div>
+  // --- 视图 1: 桌面端表格 (Desktop Table) ---
+  const DesktopTable = ({ data, isHistory = false }: { data: Booking[], isHistory?: boolean }) => (
+    <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 shadow-sm bg-white">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-slate-50 text-slate-500 font-medium">
+          <tr>
+            <th className="px-6 py-3">日期 (Date)</th>
+            <th className="px-6 py-3">时间 (Time)</th>
+            <th className="px-6 py-3">学员 (Student)</th>
+            <th className="px-6 py-3">地点 (Location)</th>
+            <th className="px-6 py-3">状态 (Status)</th>
+            <th className="px-6 py-3 text-right">操作 (Actions)</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {data.map((b) => {
+            const isOverdue = new Date(b.start_time) < new Date() && b.status === 'confirmed';
+            return (
+              <tr key={b.id} className={`hover:bg-slate-50/80 transition-colors ${isOverdue ? 'bg-rose-50/30' : ''}`}>
+                <td className="px-6 py-4 whitespace-nowrap"><FormatDate dateStr={b.start_time} /></td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-1 font-bold text-indigo-900">
+                    <Clock className="h-4 w-4 text-indigo-400" />
+                    {format(new Date(b.start_time), "HH:mm")}
+                    <span className="text-xs text-slate-400 font-normal ml-1">({b.duration}h)</span>
                   </div>
-                </div>
-                <div className="text-[10px] text-slate-400 font-medium">{group.bookings.length} 节课</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="font-bold text-slate-900">{b.student?.name}</div>
+                  <div className="text-xs text-slate-500">{b.student?.subject || "-"}</div>
+                </td>
+                <td className="px-6 py-4 text-slate-500 truncate max-w-[150px]">{b.location || "线上"}</td>
+                <td className="px-6 py-4">
+                  {b.status === 'confirmed' ? (
+                     isOverdue ? <Badge variant="destructive">已逾期</Badge> : <Badge variant="outline" className="text-indigo-600 bg-indigo-50 border-indigo-200">待进行</Badge>
+                  ) : b.status === 'completed' ? (
+                    <Badge variant="default" className="bg-emerald-500">已完成</Badge>
+                  ) : (
+                    <Badge variant="secondary">已取消</Badge>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {/* 操作按钮组 */}
+                    {b.status === 'confirmed' ? (
+                      <>
+                        <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleComplete(b)} disabled={!!loadingId}>
+                           {loadingId === b.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-4 w-4" />}
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 hover:bg-indigo-50" onClick={() => openEdit(b)}>
+                          <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-8 hover:bg-rose-50 text-rose-600 border-rose-100" onClick={() => handleCancel(b.id)}>
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <Button size="sm" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-rose-500" onClick={() => handleDelete(b.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // --- 视图 2: 移动端卡片 (Mobile Cards) ---
+  const MobileCards = ({ data }: { data: Booking[] }) => (
+    <div className="md:hidden space-y-3">
+      {data.map((b) => {
+         const isOverdue = new Date(b.start_time) < new Date() && b.status === 'confirmed';
+         return (
+          <Card key={b.id} className={`p-4 border-l-4 ${isOverdue ? 'border-l-rose-500' : b.status === 'completed' ? 'border-l-emerald-500' : 'border-l-indigo-500'} shadow-sm`}>
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <div className="font-bold text-slate-900 text-base">{b.student?.name}</div>
+                <div className="text-xs text-slate-500 flex items-center gap-1"><BookOpen className="h-3 w-3"/> {b.student?.subject || "未填科目"}</div>
               </div>
-              <div className="p-3 grid grid-cols-1 gap-3">
-                {group.bookings.map(b => <BookingCard key={b.id} booking={b} isActionable={b.status === 'confirmed'} />)}
+              <div className="text-right">
+                 <div className={`text-lg font-bold ${isOverdue ? 'text-rose-600' : 'text-indigo-600'}`}>{format(new Date(b.start_time), "HH:mm")}</div>
+                 <div className="text-xs text-slate-400">{format(new Date(b.start_time), "MM-dd")} ({b.duration}h)</div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </section>
+            
+            <div className="flex items-center gap-2 text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded">
+              <MapPin className="h-3 w-3" /> {b.location || "线上"}
+            </div>
+
+            <div className="flex gap-2">
+              {b.status === 'confirmed' ? (
+                <>
+                  <Button className="flex-1 h-9 bg-emerald-600 text-xs" onClick={() => handleComplete(b)}>完成</Button>
+                  <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => openEdit(b)}><Pencil className="h-4 w-4 text-slate-500" /></Button>
+                  <Button variant="outline" size="icon" className="h-9 w-9 border-rose-200" onClick={() => handleCancel(b.id)}><XCircle className="h-4 w-4 text-rose-500" /></Button>
+                </>
+              ) : (
+                <div className="w-full flex justify-between items-center">
+                   <Badge variant="secondary">{b.status === 'completed' ? '已完成' : '已取消'}</Badge>
+                   <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-rose-400"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              )}
+            </div>
+          </Card>
+         );
+      })}
+    </div>
   );
 
   return (
-    <div className="space-y-10">
-      <StudentSection title="📅 待处理课程 (Pending)" groups={groupedPending} isEmpty={groupedPending.length === 0} />
-      <StudentSection title="🕒 归档记录 (History)" groups={groupedHistory} isEmpty={groupedHistory.length === 0} />
+    <div className="space-y-8">
+      {/* 1. 待处理课程区域 */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-indigo-600" />
+            待办课程 (Pending)
+            <Badge className="bg-indigo-600 hover:bg-indigo-700">{pendingBookings.length}</Badge>
+          </h2>
+        </div>
+        
+        {pendingBookings.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-xl border border-dashed border-slate-200">
+            <p className="text-slate-400">🎉 太棒了，所有课程都处理完了！</p>
+          </div>
+        ) : (
+          <>
+            <DesktopTable data={pendingBookings} />
+            <MobileCards data={pendingBookings} />
+          </>
+        )}
+      </section>
 
+      {/* 2. 历史记录 (可折叠) */}
+      <section className="space-y-4">
+        <div 
+          className="flex items-center gap-2 cursor-pointer group select-none"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          <div className={`p-1 rounded-md transition-all ${showHistory ? 'bg-slate-200 rotate-90' : 'bg-slate-100'}`}>
+            <ChevronRight className="h-4 w-4 text-slate-500" />
+          </div>
+          <h2 className="text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors">
+            历史归档 (History) • {historyBookings.length}
+          </h2>
+          <div className="h-px flex-1 bg-slate-200 group-hover:bg-slate-300 transition-colors" />
+        </div>
+
+        {showHistory && (
+          <div className="animate-in slide-in-from-top-2 duration-300">
+             {/* 历史记录表格通常可以稍微淡一点，表示非重点 */}
+             <div className="opacity-80 hover:opacity-100 transition-opacity">
+               <DesktopTable data={historyBookings} isHistory />
+               <MobileCards data={historyBookings} />
+             </div>
+          </div>
+        )}
+      </section>
+
+      {/* 编辑弹窗 (保持不变) */}
       <Dialog open={!!editingBooking} onOpenChange={(open) => !open && setEditingBooking(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -207,20 +282,20 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="date" className="text-right">日期</Label>
-              <Input id="date" type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="col-span-3" />
+              <Label className="text-right">日期</Label>
+              <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="time" className="text-right">时间</Label>
-              <Input id="time" type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="col-span-3" />
+              <Label className="text-right">时间</Label>
+              <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="duration" className="text-right">时长(h)</Label>
-              <Input id="duration" type="number" step="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="col-span-3" />
+              <Label className="text-right">时长(h)</Label>
+              <Input type="number" step="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="location" className="text-right">地点</Label>
-              <Input id="location" value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="col-span-3" />
+              <Label className="text-right">地点</Label>
+              <Input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="col-span-3" />
             </div>
           </div>
           <DialogFooter>
