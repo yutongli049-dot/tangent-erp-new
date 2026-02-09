@@ -4,14 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
 
+// 1. 创建流水
 export async function createTransaction(prevState: any, formData: FormData) {
   const supabase = await createClient();
-  
-  // ✅ 1. 获取当前登录用户
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: "未登录，无法记账 (User not authenticated)" };
-  }
+  if (!user) return { error: "未登录" };
 
   const type = formData.get("type");
   const amount = formData.get("amount");
@@ -19,7 +16,7 @@ export async function createTransaction(prevState: any, formData: FormData) {
   const description = formData.get("description");
   const date = formData.get("date");
   const businessId = formData.get("businessId");
-  const proofUrl = formData.get("proofUrl") as string; // 获取图片URL
+  const proofUrl = formData.get("proofUrl") as string;
 
   const { error } = await supabase.from("transactions").insert({
     type,
@@ -29,7 +26,6 @@ export async function createTransaction(prevState: any, formData: FormData) {
     transaction_date: date,
     business_unit_id: businessId,
     proof_img_url: proofUrl,
-    // ✅ 2. 补上 created_by
     created_by: user.id, 
   });
 
@@ -39,6 +35,7 @@ export async function createTransaction(prevState: any, formData: FormData) {
   return { success: true };
 }
 
+// 2. 删除流水
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("transactions").delete().eq("id", id);
@@ -48,7 +45,39 @@ export async function deleteTransaction(id: string) {
   return { success: true };
 }
 
-// 获取财务概览 (保持不变，省略中间代码，为了完整性建议保留之前的 getFinanceOverview)
+// 3. ✅ 新增：编辑流水
+export async function updateTransaction(
+  id: string, 
+  data: { 
+    amount: number; 
+    category: string; 
+    description: string; 
+    date: string; 
+    type: string 
+  }
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "未登录" };
+
+  const { error } = await supabase
+    .from("transactions")
+    .update({
+      amount: data.amount,
+      category: data.category,
+      description: data.description,
+      transaction_date: data.date,
+      type: data.type
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/finance");
+  revalidatePath("/");
+  return { success: true };
+}
+
+// 4. 获取概览 (保持不变)
 export async function getFinanceOverview(businessId: string, range: string) {
   const supabase = await createClient();
   const now = new Date();
