@@ -2,10 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, User, BookOpen, Clock, Wallet } from "lucide-react";
-// ✅ 修复：去掉大括号，使用 default import
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, User, BookOpen, Wallet } from "lucide-react";
 import TopUpButton from "./top-up-button"; 
+import EditStudentButton from "./edit-button"; // ✅ 引入新组件
 
 export default async function StudentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,7 +21,6 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
-  // 计算预计剩余金额 (余额 * 费率)
   const estimatedValue = (student.balance || 0) * (student.hourly_rate || 0);
 
   return (
@@ -45,14 +44,18 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                 {student.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">{student.name}</h2>
+                <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  {student.name}
+                  {/* ✅ 编辑按钮 */}
+                  <EditStudentButton student={student} />
+                </h2>
                 <p className="text-sm text-slate-500 flex items-center gap-2">
-                  <span className="bg-slate-200 px-2 py-0.5 rounded text-xs font-mono">{student.student_id_code || "无学号"}</span>
+                  <span className="bg-slate-200 px-2 py-0.5 rounded text-xs font-mono">{student.student_code || "无学号"}</span>
+                  <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-xs">{student.level || "Year 11"}</span>
                 </p>
               </div>
             </div>
             
-            {/* ✅ 充值按钮 */}
             <TopUpButton studentId={student.id} />
           </div>
           
@@ -87,7 +90,6 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
             </div>
           </CardContent>
           
-          {/* Footer Info */}
           <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-between items-center">
              <div className="text-xs text-slate-400">
                预计剩余价值: <span className="font-bold text-slate-600">${estimatedValue.toFixed(2)}</span>
