@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react"; // ✅ 修复：引入 FormEvent
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createStudent } from "../actions"; 
 import { useBusiness } from "@/contexts/BusinessContext";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Loader2, ArrowLeft, Wallet } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, ArrowLeft, Wallet, GraduationCap } from "lucide-react";
 
 export default function NewStudentPage() {
   const { currentBusinessId } = useBusiness();
@@ -17,13 +18,14 @@ export default function NewStudentPage() {
 
   const [hourlyRate, setHourlyRate] = useState("70");
   const [balance, setBalance] = useState("0");
+  const [level, setLevel] = useState("Year 11"); // ✅ 默认值
 
-  // ✅ 修复：直接使用 FormEvent<HTMLFormElement>，不再写 React. 前缀
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     formData.append("businessId", currentBusinessId);
+    formData.append("level", level); // ✅ 手动追加 level
 
     const res = await createStudent(null, formData);
     setLoading(false);
@@ -95,10 +97,30 @@ export default function NewStudentPage() {
               <Label>学习科目 (Subject)</Label>
               <Input name="subject" placeholder="例如: NCEA L1 Math" className="h-11" />
             </div>
+
+            {/* ✅ 新增：年级选择 */}
             <div className="space-y-2">
-              <Label>负责老师 (Teacher)</Label>
-              <Input name="teacher" placeholder="例如: Henry Liu" className="h-11" />
+              <Label>当前年级 (Level)</Label>
+              <Select value={level} onValueChange={setLevel}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="选择年级..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Year 9">Year 9</SelectItem>
+                  <SelectItem value="Year 10">Year 10</SelectItem>
+                  <SelectItem value="Year 11">Year 11</SelectItem>
+                  <SelectItem value="Year 12">Year 12</SelectItem>
+                  <SelectItem value="Year 13">Year 13</SelectItem>
+                  <SelectItem value="University">University</SelectItem>
+                  <SelectItem value="Adult">Adult</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>负责老师 (Teacher)</Label>
+            <Input name="teacher" placeholder="例如: Henry Liu" className="h-11" />
           </div>
 
           <Button type="submit" className="w-full h-12 text-base font-bold bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
