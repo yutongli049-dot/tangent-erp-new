@@ -2,16 +2,24 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval, isSameDay, subDays } from "date-fns";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
 
 export async function createTransaction(prevState: any, formData: FormData) {
   const supabase = await createClient();
+  
+  // ✅ 1. 获取当前登录用户
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "未登录，无法记账 (User not authenticated)" };
+  }
+
   const type = formData.get("type");
   const amount = formData.get("amount");
   const category = formData.get("category");
   const description = formData.get("description");
   const date = formData.get("date");
   const businessId = formData.get("businessId");
+  const proofUrl = formData.get("proofUrl") as string; // 获取图片URL
 
   const { error } = await supabase.from("transactions").insert({
     type,
@@ -20,6 +28,9 @@ export async function createTransaction(prevState: any, formData: FormData) {
     description,
     transaction_date: date,
     business_unit_id: businessId,
+    proof_img_url: proofUrl,
+    // ✅ 2. 补上 created_by
+    created_by: user.id, 
   });
 
   if (error) return { error: error.message };
@@ -37,7 +48,7 @@ export async function deleteTransaction(id: string) {
   return { success: true };
 }
 
-// ✅ 核心新增：获取财务概览数据
+// 获取财务概览 (保持不变，省略中间代码，为了完整性建议保留之前的 getFinanceOverview)
 export async function getFinanceOverview(businessId: string, range: string) {
   const supabase = await createClient();
   const now = new Date();
@@ -45,73 +56,31 @@ export async function getFinanceOverview(businessId: string, range: string) {
   let startDate = new Date();
   let endDate = new Date();
 
-  // 1. 计算时间范围
   switch (range) {
-    case "week":
-      startDate = startOfWeek(now, { weekStartsOn: 1 }); // 周一为第一天
-      endDate = endOfWeek(now, { weekStartsOn: 1 });
-      break;
-    case "month":
-      startDate = startOfMonth(now);
-      endDate = endOfMonth(now);
-      break;
-    case "3months":
-      startDate = subMonths(now, 2); // 当前月 + 前两个月
-      startDate = startOfMonth(startDate);
-      endDate = endOfMonth(now);
-      break;
-    case "6months":
-      startDate = subMonths(now, 5);
-      startDate = startOfMonth(startDate);
-      endDate = endOfMonth(now);
-      break;
-    case "year":
-      startDate = startOfYear(now);
-      endDate = endOfYear(now);
-      break;
-    default: // 默认本月
-      startDate = startOfMonth(now);
-      endDate = endOfMonth(now);
+    case "week": startDate = startOfWeek(now, { weekStartsOn: 1 }); endDate = endOfWeek(now, { weekStartsOn: 1 }); break;
+    case "month": startDate = startOfMonth(now); endDate = endOfMonth(now); break;
+    case "3months": startDate = subMonths(now, 2); startDate = startOfMonth(startDate); endDate = endOfMonth(now); break;
+    case "6months": startDate = subMonths(now, 5); startDate = startOfMonth(startDate); endDate = endOfMonth(now); break;
+    case "year": startDate = startOfYear(now); endDate = endOfYear(now); break;
+    default: startDate = startOfMonth(now); endDate = endOfMonth(now);
   }
 
   const startStr = startDate.toISOString();
   const endStr = endDate.toISOString();
 
-  // 2. 并行查询三组数据
   const [transactionsRes, bookingsRes, studentsRes] = await Promise.all([
-    // A. 查流水 (收入/支出)
-    supabase
-      .from("transactions")
-      .select("*")
-      .eq("business_unit_id", businessId)
-      .gte("transaction_date", startStr)
-      .lte("transaction_date", endStr)
-      .order("transaction_date", { ascending: false }),
-    
-    // B. 查消课 (已完成的课程)
-    supabase
-      .from("bookings")
-      .select(`start_time, duration, student:students(hourly_rate)`)
-      .eq("business_unit_id", businessId)
-      .eq("status", "completed") // 只算已完成
-      .gte("start_time", startStr)
-      .lte("start_time", endStr),
-
-    // C. 查当前资金池 (待消课 - 这是一个快照，不随时间范围变化)
-    supabase
-      .from("students")
-      .select("balance, hourly_rate")
-      .eq("business_unit_id", businessId)
+    supabase.from("transactions").select("*").eq("business_unit_id", businessId).gte("transaction_date", startStr).lte("transaction_date", endStr).order("transaction_date", { ascending: false }),
+    supabase.from("bookings").select(`start_time, duration, student:students(hourly_rate)`).eq("business_unit_id", businessId).eq("status", "completed").gte("start_time", startStr).lte("start_time", endStr),
+    supabase.from("students").select("balance, hourly_rate").eq("business_unit_id", businessId)
   ]);
 
   const transactions = transactionsRes.data || [];
   const bookings = bookingsRes.data || [];
   const students = studentsRes.data || [];
 
-  // 3. 计算汇总指标
   let totalIncome = 0;
   let totalExpense = 0;
-  let totalRealized = 0; // 消课产值
+  let totalRealized = 0;
 
   transactions.forEach(t => {
     if (t.type === 'income') totalIncome += Number(t.amount);
@@ -123,18 +92,11 @@ export async function getFinanceOverview(businessId: string, range: string) {
     totalRealized += (b.duration * rate);
   });
 
-  // 待消课资金池 (所有学生余额 * 费率)
   const totalUnearned = students.reduce((sum, s) => sum + (Number(s.balance) * Number(s.hourly_rate || 0)), 0);
 
-  // 4. 生成图表数据 (按天聚合)
-  // 生成日期序列
   const daysInterval = eachDayOfInterval({ start: startDate, end: endDate });
-  
-  // 如果时间跨度太大(比如年)，按天显示太密，可以优化为按月，但为了MVP简单，先按天
   const chartData = daysInterval.map(day => {
     const dateStr = format(day, 'yyyy-MM-dd');
-    
-    // 当日流水
     let dailyIncome = 0;
     let dailyExpense = 0;
     transactions.forEach(t => {
@@ -144,16 +106,15 @@ export async function getFinanceOverview(businessId: string, range: string) {
       }
     });
 
-    // 当日消课
     let dailyRealized = 0;
     bookings.forEach((b: any) => {
-      if (b.start_time.startsWith(dateStr)) { // 简单字符串匹配 UTC 可能有时区偏差，但通常足够精确到天
+      if (b.start_time.startsWith(dateStr)) {
         dailyRealized += (b.duration * (b.student?.hourly_rate || 0));
       }
     });
 
     return {
-      date: format(day, range === 'year' || range === '6months' ? 'MM-dd' : 'dd'), // 跨度大显示月日，跨度小显示日
+      date: format(day, range === 'year' || range === '6months' ? 'MM-dd' : 'dd'),
       fullDate: dateStr,
       income: dailyIncome,
       expense: dailyExpense,
@@ -163,14 +124,8 @@ export async function getFinanceOverview(businessId: string, range: string) {
   });
 
   return {
-    summary: {
-      totalIncome,
-      totalExpense,
-      netIncome: totalIncome - totalExpense,
-      totalRealized,
-      totalUnearned
-    },
+    summary: { totalIncome, totalExpense, netIncome: totalIncome - totalExpense, totalRealized, totalUnearned },
     chartData,
-    transactions // 返回给列表显示
+    transactions
   };
 }
