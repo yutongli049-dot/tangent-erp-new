@@ -49,7 +49,7 @@ export default function AddTransactionPage() {
   // 当前应该显示的分类列表
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
 
-  // 处理类型切换 (清空分类，防止分类混淆)
+  // 处理类型切换
   const handleTypeChange = (val: string) => {
     setType(val as "income" | "expense");
     setCategory(""); // 切换时重置分类
@@ -92,22 +92,28 @@ export default function AddTransactionPage() {
 
     setIsLoading(true);
 
-    const result = await createTransaction({
-      amount: parseFloat(amount),
-      type,
-      category,
-      date,
-      description,
-      businessId: currentBusinessId,
-      proofUrl,
-    });
+    // ✅ 修复：构建 FormData 对象
+    const formData = new FormData();
+    formData.append("amount", amount);
+    formData.append("type", type);
+    formData.append("category", category);
+    formData.append("date", date);
+    formData.append("description", description);
+    formData.append("businessId", currentBusinessId);
+    if (proofUrl) {
+      formData.append("proofUrl", proofUrl);
+    }
+
+    // ✅ 修复：传入 null 作为 prevState，formData 作为第二个参数
+    const result = await createTransaction(null, formData);
 
     setIsLoading(false);
 
-    if (result.error) {
+    // createTransaction 返回可能是 undefined (void) 或者对象
+    if (result && 'error' in result && result.error) {
       alert(`保存失败: ${result.error}`);
     } else {
-      router.push("/");
+      router.push("/finance"); // 保存成功回财务首页
     }
   };
 
@@ -118,7 +124,7 @@ export default function AddTransactionPage() {
       <div className="mx-auto max-w-xl px-6 py-8">
         <div className="mb-8 flex items-center gap-4">
           <Link
-            href="/"
+            href="/finance" // 返回财务页
             className="group flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200/70 bg-white text-slate-500 shadow-sm transition-all hover:-translate-y-[1px] hover:text-indigo-600"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -163,7 +169,6 @@ export default function AddTransactionPage() {
 
             {/* 3. 分类与日期 */}
             <div className="grid grid-cols-2 gap-4">
-              {/* ✅ 动态分类选择 */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">分类 (Category)</Label>
                 <Select value={category} onValueChange={setCategory}>
@@ -180,7 +185,6 @@ export default function AddTransactionPage() {
                 </Select>
               </div>
 
-              {/* 日期 */}
               <div className="space-y-2">
                 <Label className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">日期 (Date)</Label>
                 <Input
