@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js"; // ⚠️ 注意：这里直接用官方库，不封装
 
-// ✅ 1. 核心：强制动态模式，防止苹果日历读到旧缓存
+// 1. 强制动态模式 (防缓存)
 export const dynamic = "force-dynamic"; 
 
 export async function GET(
@@ -8,19 +8,24 @@ export async function GET(
   { params }: { params: Promise<{ businessId: string }> }
 ) {
   const { businessId } = await params;
-  const supabase = await createClient();
 
   console.log(`Calendar Request for: ${businessId}`);
 
-  // 2. 构建查询
+  // ✅ 2. 初始化 Supabase (使用 Service Role Key)
+  // 这里的关键是使用 SERVICE_ROLE_KEY，它拥有最高权限，可以绕过 RLS 限制
+  // 苹果日历是未登录用户，必须用这个 key 才能查到受保护的数据
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY! // ⚠️ 确保你在 .env.local 里配了这个变量
+  );
+
+  // 3. 构建查询
   let query = supabase
     .from("bookings")
-    .select(`*, student:students(name)`) // 关联查学生姓名
-    .neq("status", "cancelled");         // 排除已取消的
+    .select(`*, student:students(name)`) 
+    .neq("status", "cancelled"); 
 
-  // ✅ 3. 逻辑修正：直接用 URL 参数查库
-  // 截图证明数据库存的就是 "cus"，所以 URL 里的 "cus" 直接拿来用就行，不需要翻译。
-  // 只有当参数是 "tangent" (总部视角) 时，才不加过滤条件，返回所有。
+  // 4. 处理 ID (直接用 URL 参数，因为数据库里存的就是 'cus' / 'sine')
   if (businessId !== "tangent") {
     query = query.eq("business_unit_id", businessId);
   }
@@ -29,25 +34,25 @@ export async function GET(
 
   if (error) {
     console.error("Calendar DB Error:", error);
+    return new Response("Database Error", { status: 500 });
   }
 
-  // 如果没查到数据，返回一个合法的空日历，否则苹果会报错
   const safeBookings = bookings || [];
+  console.log(`Found ${safeBookings.length} bookings for ${businessId}`);
 
-  // 4. 生成 ICS 内容
+  // 5. 生成 ICS 内容 (手动生成，无需安装 ical-generator)
   let icsContent = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Tangent ERP//Calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    `X-WR-CALNAME:Tangent Schedule (${businessId.toUpperCase()})`, // 日历名称
-    "X-WR-TIMEZONE:Pacific/Auckland", // 声明时区
-    "REFRESH-INTERVAL;VALUE=DURATION:PT15M", // 建议 15 分钟刷新
+    `X-WR-CALNAME:Tangent Schedule (${businessId.toUpperCase()})`,
+    "X-WR-TIMEZONE:Pacific/Auckland",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT15M", 
     "X-PUBLISHED-TTL:PT15M",
   ];
 
-  // 时间格式化函数 (UTC)
   const formatUTC = (date: Date) => {
     if (isNaN(date.getTime())) return "";
     return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
@@ -59,17 +64,18 @@ export async function GET(
 
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
 
+    // 标题处理
+    const prefix = booking.business_unit_id === 'sine' ? '[驾校]' : 
+                   booking.business_unit_id === 'cus' ? '[教培]' : '';
+    const studentName = booking.student?.name || "学员";
+    
     icsContent.push("BEGIN:VEVENT");
     icsContent.push(`UID:${booking.id}`);
     icsContent.push(`DTSTAMP:${formatUTC(new Date())}`);
     icsContent.push(`DTSTART:${formatUTC(startDate)}`);
     icsContent.push(`DTEND:${formatUTC(endDate)}`);
-    
-    // 标题：区分一下来源，方便你看
-    const prefix = booking.business_unit_id === 'sine' ? '[驾校]' : 
-                   booking.business_unit_id === 'cus' ? '[教培]' : '';
-    
-    icsContent.push(`SUMMARY:${prefix} ${booking.student?.name || "学员"} - ${booking.status === 'completed' ? '已完成' : '待进行'}`);
+    icsContent.push(`SUMMARY:${prefix} ${studentName}`);
+    icsContent.push(`DESCRIPTION:学员: ${studentName}\\n状态: ${booking.status === 'completed' ? '已完成' : '待进行'}`);
     
     if (booking.location) {
       icsContent.push(`LOCATION:${booking.location}`);
@@ -79,12 +85,11 @@ export async function GET(
 
   icsContent.push("END:VCALENDAR");
 
-  // 5. 返回文件，带防缓存头
+  // 6. 返回 (带防缓存头)
   return new Response(icsContent.join("\r\n"), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": `attachment; filename="tangent-${businessId}.ics"`,
-      // ✅ 禁缓存三连
       "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
       "Pragma": "no-cache",
       "Expires": "0",
