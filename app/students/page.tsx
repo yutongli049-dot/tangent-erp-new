@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { StudentList } from "./student-list"; 
+import { Navbar } from "@/components/Navbar"; // ✅ 1. 引入 Navbar
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
@@ -15,6 +16,9 @@ export default async function StudentsPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
+      {/* ✅ 2. 放置 Navbar */}
+      <Navbar />
+
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -31,7 +35,6 @@ export default async function StudentsPage() {
           </Link>
         </div>
 
-        {/* ✅ 修复核心报错：属性名必须是 'students'，不能是 'initialStudents' */}
         <StudentList students={students || []} />
       </div>
     </main>

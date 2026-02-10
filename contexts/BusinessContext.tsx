@@ -1,53 +1,59 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { BUSINESS_UNITS, BusinessId, DEFAULT_BUSINESS_ID } from "@/lib/constants";
 
-interface BusinessContextType {
-  currentBusinessId: BusinessId;
-  switchBusiness: (id: BusinessId) => void;
+type BusinessContextType = {
+  currentBusinessId: string;
   currentLabel: string;
-}
+  setBusinessId: (id: string) => void; // ✅ 新增：暴露切换函数
+};
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
 
 export function BusinessProvider({ children }: { children: React.ReactNode }) {
-  const [currentBusinessId, setCurrentBusinessId] = useState<BusinessId>(DEFAULT_BUSINESS_ID);
-  const [isLoaded, setIsLoaded] = useState(false);
+  // 默认值，防止服务端渲染时为空
+  const [currentBusinessId, setCurrentBusinessIdState] = useState<string>("cus");
+  const [currentLabel, setCurrentLabel] = useState("CuS Academy (教培)");
 
-  // 1. 初始化时从 LocalStorage 读取上次的选择
+  // 1. 初始化时读取 Cookie
   useEffect(() => {
-    const saved = localStorage.getItem("tangent_active_business");
-    if (saved && BUSINESS_UNITS.find((b) => b.id === saved)) {
-      setCurrentBusinessId(saved as BusinessId);
+    // 简单的读取 Cookie 逻辑
+    const match = document.cookie.match(new RegExp('(^| )businessId=([^;]+)'));
+    if (match) {
+      updateState(match[2]);
     }
-    setIsLoaded(true);
   }, []);
 
-  // 2. 切换业务逻辑
-  const switchBusiness = (id: BusinessId) => {
-    setCurrentBusinessId(id);
-    localStorage.setItem("tangent_active_business", id);
-    // 这里未来可以加一行代码：强制刷新页面数据
-    // router.refresh(); 
+  // 2. 统一更新逻辑
+  const updateState = (id: string) => {
+    setCurrentBusinessIdState(id);
+    
+    // 更新 Label
+    const labels: Record<string, string> = {
+      "cus": "CuS Academy (教培)",
+      "sine": "Sine Studio (驾校)",
+      "tangent": "Tangent Group"
+    };
+    setCurrentLabel(labels[id] || id);
   };
 
-  // 获取当前业务的显示名称
-  const currentLabel = BUSINESS_UNITS.find((b) => b.id === currentBusinessId)?.label || "Select Business";
-
-  // 避免服务端渲染不一致（Hydration Mismatch），稍微等待一下客户端加载
-  if (!isLoaded) {
-    return null; // 或者返回一个全屏 Loading 骨架屏
-  }
+  // 3. 暴露给外部的切换函数
+  const setBusinessId = (id: string) => {
+    updateState(id);
+    // 写入 Cookie，过期时间设置长一点 (365天)
+    document.cookie = `businessId=${id}; path=/; max-age=31536000; SameSite=Lax`;
+    
+    // 强制刷新页面以确保数据重新获取 (可选，视需求而定，为了稳妥建议刷新)
+    window.location.reload(); 
+  };
 
   return (
-    <BusinessContext.Provider value={{ currentBusinessId, switchBusiness, currentLabel }}>
+    <BusinessContext.Provider value={{ currentBusinessId, currentLabel, setBusinessId }}>
       {children}
     </BusinessContext.Provider>
   );
 }
 
-// 自定义 Hook，方便组件调用
 export function useBusiness() {
   const context = useContext(BusinessContext);
   if (context === undefined) {
