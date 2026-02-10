@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-// ✅ 1. 强制动态模式：禁止 Next.js 缓存这个路由
+// ✅ 1. 核心：强制动态模式，防止苹果日历读到旧缓存
 export const dynamic = "force-dynamic"; 
 
 export async function GET(
@@ -10,68 +10,81 @@ export async function GET(
   const { businessId } = await params;
   const supabase = await createClient();
 
-  // 1. 查询课程
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select(`*, student:students(name)`)
-    .eq("business_unit_id", businessId)
-    .neq("status", "cancelled");
+  console.log(`Calendar Request for: ${businessId}`);
 
-  if (!bookings) {
-    return new Response("No bookings found", { status: 404 });
+  // 2. 构建查询
+  let query = supabase
+    .from("bookings")
+    .select(`*, student:students(name)`) // 关联查学生姓名
+    .neq("status", "cancelled");         // 排除已取消的
+
+  // ✅ 3. 逻辑修正：直接用 URL 参数查库
+  // 截图证明数据库存的就是 "cus"，所以 URL 里的 "cus" 直接拿来用就行，不需要翻译。
+  // 只有当参数是 "tangent" (总部视角) 时，才不加过滤条件，返回所有。
+  if (businessId !== "tangent") {
+    query = query.eq("business_unit_id", businessId);
   }
 
-  // 2. 生成 ICS 内容
+  const { data: bookings, error } = await query;
+
+  if (error) {
+    console.error("Calendar DB Error:", error);
+  }
+
+  // 如果没查到数据，返回一个合法的空日历，否则苹果会报错
+  const safeBookings = bookings || [];
+
+  // 4. 生成 ICS 内容
   let icsContent = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Tangent ERP//Calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Tangent Schedule",
-    "X-WR-TIMEZONE:Pacific/Auckland",
-    // ✅ 2. 刷新建议：建议客户端每 15 分钟刷新一次 (P15M = Period 15 Minutes)
-    "REFRESH-INTERVAL;VALUE=DURATION:PT15M", 
+    `X-WR-CALNAME:Tangent Schedule (${businessId.toUpperCase()})`, // 日历名称
+    "X-WR-TIMEZONE:Pacific/Auckland", // 声明时区
+    "REFRESH-INTERVAL;VALUE=DURATION:PT15M", // 建议 15 分钟刷新
     "X-PUBLISHED-TTL:PT15M",
   ];
 
-  // 格式化函数：YYYYMMDDTHHmmssZ
+  // 时间格式化函数 (UTC)
   const formatUTC = (date: Date) => {
-    // 确保处理无效日期
     if (isNaN(date.getTime())) return "";
     return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   };
 
-  bookings.forEach((booking) => {
+  safeBookings.forEach((booking) => {
     const startDate = new Date(booking.start_time);
     const endDate = new Date(booking.end_time);
 
-    // 如果日期无效，跳过
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return;
 
     icsContent.push("BEGIN:VEVENT");
-    // ✅ 3. SEQUENCE: 如果你的 booking 表有 updated_at，最好用来做 sequence，没有的话也没关系
     icsContent.push(`UID:${booking.id}`);
-    icsContent.push(`DTSTAMP:${formatUTC(new Date())}`); // 生成时间
+    icsContent.push(`DTSTAMP:${formatUTC(new Date())}`);
     icsContent.push(`DTSTART:${formatUTC(startDate)}`);
     icsContent.push(`DTEND:${formatUTC(endDate)}`);
-    icsContent.push(`SUMMARY:${booking.student?.name || "课程"} - ${booking.status === 'completed' ? '已完成' : '待进行'}`);
+    
+    // 标题：区分一下来源，方便你看
+    const prefix = booking.business_unit_id === 'sine' ? '[驾校]' : 
+                   booking.business_unit_id === 'cus' ? '[教培]' : '';
+    
+    icsContent.push(`SUMMARY:${prefix} ${booking.student?.name || "学员"} - ${booking.status === 'completed' ? '已完成' : '待进行'}`);
     
     if (booking.location) {
       icsContent.push(`LOCATION:${booking.location}`);
     }
-    
     icsContent.push("END:VEVENT");
   });
 
   icsContent.push("END:VCALENDAR");
 
-  // 3. 返回文件
+  // 5. 返回文件，带防缓存头
   return new Response(icsContent.join("\r\n"), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="tangent-schedule.ics"`,
-      // ✅ 4. 核心 HTTP 头：禁止任何形式的缓存
+      "Content-Disposition": `attachment; filename="tangent-${businessId}.ics"`,
+      // ✅ 禁缓存三连
       "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
       "Pragma": "no-cache",
       "Expires": "0",
