@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
   MapPin, Loader2, Trash2, Pencil, Check, 
-  Calendar as CalendarIcon, BookOpen
+  Calendar as CalendarIcon, BookOpen, FileText // ✅ 引入 FileText 图标
 } from "lucide-react";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { InvoiceModal } from "@/components/InvoiceModal"; // ✅ 引入发票组件
 
 type Booking = {
   id: string;
@@ -22,7 +23,8 @@ type Booking = {
   duration: number;
   status: string;
   location: string | null;
-  student: { id: string; name: string; teacher: string | null; subject: string | null; } | null;
+  // ✅ 确保这里包含 hourly_rate 和 student_code
+  student: { id: string; name: string; teacher: string | null; subject: string | null; hourly_rate?: number; student_code?: string; } | null;
   business_unit_id: string;
 };
 
@@ -31,11 +33,16 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
 
+  // 编辑相关
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editDuration, setEditDuration] = useState("1");
   const [editLocation, setEditLocation] = useState("");
+
+  // ✅ 新增：发票状态
+  const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
 
   const filteredByBusiness = bookings.filter((b) => {
     if (currentBusinessId === "tangent") return true;
@@ -59,6 +66,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     groupedBookings[dateKey].push(b);
   });
 
+  // Actions
   const handleComplete = async (b: Booking) => {
     if (!confirm(`确认完成 ${b.student?.name} 的课程？`)) return;
     setLoadingId(b.id);
@@ -94,7 +102,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     setLoadingId(null);
   };
 
-  // ✅ 核心修改：使用 DiceBear 头像
+  // Avatar
   const Avatar = ({ name }: { name: string }) => {
     const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${name}&backgroundColor=e5e7eb,d1d5db,9ca3af`;
     return (
@@ -107,6 +115,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
   return (
     <div className="space-y-6">
       
+      {/* Tab Switcher */}
       <div className="bg-slate-100 p-1 rounded-xl flex items-center relative">
         <button 
           onClick={() => setActiveTab('upcoming')}
@@ -126,13 +135,14 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
         </button>
       </div>
 
+      {/* List */}
       {Object.keys(groupedBookings).length === 0 ? (
         <div className="text-center py-20">
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 text-slate-300 mb-4">
             <CalendarIcon className="h-8 w-8" />
           </div>
           <p className="text-slate-400 text-sm font-medium">
-            {activeTab === 'upcoming' ? '暂无待办课程，去排一节吧！' : '暂无历史记录'}
+            {activeTab === 'upcoming' ? '暂无待办课程' : '暂无历史记录'}
           </p>
         </div>
       ) : (
@@ -166,7 +176,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                         <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm active:scale-[0.99] transition-transform">
                            <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-3">
-                                 {/* ✅ 这里使用了新的 Avatar */}
                                  <Avatar name={b.student?.name || "?"} />
                                  <div>
                                     <h4 className="font-bold text-slate-900 text-sm">{b.student?.name}</h4>
@@ -192,6 +201,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
                               <div className="flex items-center gap-2">
                                 {activeTab === 'upcoming' ? (
+                                  // 待办 Tab：编辑 & 完成
                                   <>
                                     <button onClick={() => openEdit(b)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
                                       <Pencil className="h-4 w-4" />
@@ -202,7 +212,18 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                                     </button>
                                   </>
                                 ) : (
+                                  // 历史 Tab：状态 & 单据 & 删除
                                   <div className="flex items-center gap-2">
+                                     {/* ✅ 这里的 Invoice 按钮 */}
+                                     {b.status === 'completed' && (
+                                       <Button 
+                                         size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 border-indigo-100 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                                         onClick={() => { setInvoiceBooking(b); setInvoiceOpen(true); }}
+                                       >
+                                         <FileText className="h-3 w-3" /> 单据
+                                       </Button>
+                                     )}
+                                     
                                      <Badge variant="secondary" className="text-[10px] font-normal text-slate-400 bg-slate-50">
                                        {b.status === 'completed' ? '已完成' : '已取消'}
                                      </Badge>
@@ -238,10 +259,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-xs text-slate-500">时长</Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <Input type="number" step="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="h-9" />
-                <span className="text-xs text-slate-400">小时</span>
-              </div>
+              <Input type="number" step="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="col-span-3 h-9" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-xs text-slate-500">地点</Label>
@@ -258,6 +276,14 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ✅ 发票组件挂载 */}
+      <InvoiceModal 
+        booking={invoiceBooking} 
+        open={invoiceOpen} 
+        onOpenChange={setInvoiceOpen} 
+      />
+
     </div>
   );
 }
