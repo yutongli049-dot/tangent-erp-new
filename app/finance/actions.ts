@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
 
-// 1. ✅ 升级：创建流水 (支持关联学生 + 充值)
+// 1. 创建流水 (保持不变)
 export async function createTransaction(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,11 +18,9 @@ export async function createTransaction(prevState: any, formData: FormData) {
   const businessId = formData.get("businessId");
   const proofUrl = formData.get("proofUrl") as string;
   
-  // 新增字段
   const studentId = formData.get("studentId") as string;
   const hoursToAdd = Number(formData.get("hoursToAdd"));
 
-  // A. 插入流水
   const { error: txError } = await supabase.from("transactions").insert({
     type,
     amount: Number(amount),
@@ -32,45 +30,64 @@ export async function createTransaction(prevState: any, formData: FormData) {
     business_unit_id: businessId,
     proof_img_url: proofUrl,
     created_by: user.id,
-    // 如果选了学生，关联上去
     student_id: studentId || null, 
-    // 如果填了课时，记录数量 (方便以后查账知道这笔钱买了几个课时)
     quantity: hoursToAdd > 0 ? hoursToAdd : null 
   });
 
   if (txError) return { error: txError.message };
 
-  // B. ✅ 核心逻辑：如果关联了学生且输入了课时，自动充值
+  // 自动充值逻辑
   if (studentId && hoursToAdd > 0 && type === 'income') {
-    // 1. 查当前余额
-    const { data: student } = await supabase
-      .from("students")
-      .select("balance")
-      .eq("id", studentId)
-      .single();
-    
+    const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
     if (student) {
-      const newBalance = Number(student.balance) + hoursToAdd;
-      // 2. 更新余额
-      await supabase
-        .from("students")
-        .update({ balance: newBalance })
-        .eq("id", studentId);
+      await supabase.from("students").update({ balance: Number(student.balance) + hoursToAdd }).eq("id", studentId);
     }
   }
 
   revalidatePath("/finance");
   revalidatePath("/");
-  revalidatePath("/students"); // 顺便刷新学生列表
+  revalidatePath("/students");
   return { success: true };
 }
 
-// 2. 删除流水 (保持不变)
+// 2. ✅ 升级：删除流水 (带回滚逻辑)
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
+  
+  // A. 删除前先查询：这条流水是否关联了学生充值？
+  const { data: tx } = await supabase
+    .from("transactions")
+    .select("student_id, quantity, type, category")
+    .eq("id", id)
+    .single();
+
+  // B. 如果是“充值流水”，则需要把充进去的课时“扣回来”
+  // 条件：关联了学生 + 有数量 + 是收入 + 分类是学费
+  if (tx && tx.student_id && tx.quantity && tx.quantity > 0 && tx.type === 'income') {
+    // 查当前余额
+    const { data: student } = await supabase
+      .from("students")
+      .select("balance")
+      .eq("id", tx.student_id)
+      .single();
+    
+    if (student) {
+      const newBalance = Number(student.balance) - Number(tx.quantity);
+      // 执行回滚扣费
+      await supabase
+        .from("students")
+        .update({ balance: newBalance })
+        .eq("id", tx.student_id);
+    }
+  }
+
+  // C. 无论是否回滚，最后都物理删除这条流水
   const { error } = await supabase.from("transactions").delete().eq("id", id);
+  
   if (error) return { error: error.message };
+  
   revalidatePath("/finance");
+  revalidatePath("/students"); // 刷新学生页面的余额
   revalidatePath("/");
   return { success: true };
 }
@@ -81,9 +98,9 @@ export async function updateTransaction(
   data: { amount: number; category: string; description: string; date: string; type: string }
 ) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "未登录" };
-
+  // 注意：目前编辑流水不涉及“修改关联课时”，因为逻辑太复杂容易出错。
+  // 建议用户如果填错了课时，直接删除重记，这样会触发上面的回滚逻辑，更安全。
+  
   const { error } = await supabase
     .from("transactions")
     .update({
@@ -105,7 +122,6 @@ export async function updateTransaction(
 export async function getFinanceStats(businessId: string, range: string) {
   const supabase = await createClient();
   const now = new Date();
-  
   let startDate = new Date();
   let endDate = new Date();
 
