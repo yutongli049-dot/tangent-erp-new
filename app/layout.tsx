@@ -1,16 +1,33 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next"; // ✅ 引入 Viewport
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { BusinessProvider } from "@/contexts/BusinessContext"; 
-// ✅ 新增：引入 Toaster 组件 (假设你用 shadcn 命令安装的)
-// 如果你是 npm install sonner 直接安装的，这里改成 import { Toaster } from "sonner";
-import { Toaster } from "@/components/ui/sonner"; 
+import { BusinessProvider } from "@/contexts/BusinessContext";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// ✅ 1. 配置 PWA 相关的元数据
 export const metadata: Metadata = {
   title: "Tangent ERP",
-  description: "Internal management system for Tangent Group",
+  description: "All-in-one Business Management",
+  manifest: "/manifest.json", // 关联 manifest
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tangent ERP",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+// ✅ 2. 配置视口和主题色 (Next.js 14+ 推荐写法)
+export const viewport: Viewport = {
+  themeColor: "#4f46e5", // 你的品牌紫 (Indigo-600)
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // 禁止缩放，像原生 App 一样
 };
 
 export default function RootLayout({
@@ -20,11 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-slate-50`}>
         <BusinessProvider>
           {children}
-          {/* ✅ 必须加这一行！否则弹窗不会显示 */}
-          <Toaster />
+          <Toaster position="top-center" />
         </BusinessProvider>
       </body>
     </html>

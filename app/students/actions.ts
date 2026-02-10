@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+
+
 // 1. 创建学员 (Create)
 export async function createStudent(prevState: any, formData: FormData) {
   const supabase = await createClient();
@@ -133,4 +135,25 @@ export async function topUpStudent(studentId: string, hoursToAdd: number) {
   revalidatePath("/students");
   revalidatePath("/");
   return { success: true };
+}
+
+// ✅ 新增：获取单个学员的完整历史 (消费 & 充值)
+export async function getStudentHistory(studentId: string) {
+  const supabase = await createClient();
+
+  // 1. 查课程记录 (消费)
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("start_time", { ascending: false }); // 最近的课在前面
+
+  // 2. 查流水记录 (充值 & 其他)
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("transaction_date", { ascending: false });
+
+  return { bookings, transactions };
 }
