@@ -17,6 +17,6 @@ export const config = {
      * - auth (认证回调)
      * - api (✅ 新增：排除 API 接口，允许日历等外部工具在未登录状态下访问)
      */
-    "/((?!_next/static|_next/image|favicon.ico|login|auth|api).*)",
+    "/((?!_next/static|_next/image|favicon.ico|login|auth|api|register).*)",
   ],
 };
