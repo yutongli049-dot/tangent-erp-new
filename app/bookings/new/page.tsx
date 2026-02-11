@@ -152,8 +152,6 @@ export default function NewBookingPage() {
                   <SelectContent>
                     <SelectItem value="Henry">Henry</SelectItem>
                     <SelectItem value="Yvetta">Yvetta</SelectItem>
-                    <SelectItem value="Elvis">Elvis</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
