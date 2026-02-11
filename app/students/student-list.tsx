@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
   Trash2, Loader2, User, BookOpen, Pencil, 
-  Search, Coins, MoreHorizontal
+  Search, Coins, MoreHorizontal, CalendarClock, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -83,13 +83,10 @@ export function StudentList({ students }: { students: any[] }) {
     }
   };
 
-  // ✅ 核心修改：使用 DiceBear 头像
   const Avatar = ({ name }: { name: string }) => {
-    // 使用名字作为种子，保证同一个人的头像永远不变
-    // backgroundType=solid,gradient: 给头像加个底色，不那么单调
     const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${name}&backgroundColor=e5e7eb,d1d5db,9ca3af`;
     return (
-      <div className="h-12 w-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-slate-100">
+      <div className="h-12 w-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-slate-100 shrink-0">
         <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
       </div>
     );
@@ -117,16 +114,35 @@ export function StudentList({ students }: { students: any[] }) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredStudents.map((student) => {
-            const isLowBalance = Number(student.balance) < 3;
+            // ✅ 核心逻辑：计算课时
+            // 1. 获取总课时 (数据库 balance)
+            const totalBalance = Number(student.balance);
+
+            // 2. 计算已排课时 (所有 confirmed 状态的 booking duration 之和)
+            const bookings = student.bookings || [];
+            const scheduledHours = bookings
+              .filter((b: any) => b.status === 'confirmed')
+              .reduce((sum: number, b: any) => sum + Number(b.duration), 0);
+
+            // 3. 计算待排课时 (总 - 已排)
+            const unscheduledHours = totalBalance - scheduledHours;
+
+            // 状态判断
+            const isTotalLow = totalBalance < 3;
+            // 待排 > 0 说明还有课没排 (Action Required)
+            const hasUnscheduled = unscheduledHours > 0;
+            // 待排 < 0 说明排超了 (Warning)
+            const isOverbooked = unscheduledHours < 0;
+
             return (
               <div key={student.id} className="group relative">
                 <Card className="h-full border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all overflow-hidden bg-white">
-                  <Link href={`/students/${student.id}`} className="block p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3.5">
+                  <Link href={`/students/${student.id}`} className="block p-5 pb-3">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3.5 overflow-hidden">
                         <Avatar name={student.name} />
-                        <div>
-                          <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-base">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-base truncate">
                             {student.name}
                           </h3>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -135,49 +151,69 @@ export function StudentList({ students }: { students: any[] }) {
                                  {student.student_code}
                                </Badge>
                              )}
-                             <span className="text-xs text-slate-500">{student.level}</span>
+                             <span className="text-xs text-slate-500 truncate">{student.level}</span>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className={`text-right px-2.5 py-1 rounded-lg ${isLowBalance ? 'bg-rose-50' : 'bg-emerald-50'}`}>
-                         <div className={`text-lg font-black leading-none ${isLowBalance ? 'text-rose-600' : 'text-emerald-600'}`}>
-                           {Number(student.balance)}
-                         </div>
-                         <div className={`text-[9px] font-bold uppercase mt-0.5 ${isLowBalance ? 'text-rose-400' : 'text-emerald-400'}`}>
-                           剩余课时
-                         </div>
-                      </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-50 grid grid-cols-2 gap-2 text-xs text-slate-500">
-                       <div className="flex items-center gap-1.5 truncate">
-                         <BookOpen className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
-                         <span className="truncate">{student.subject || "无科目"}</span>
-                       </div>
-                       <div className="flex items-center gap-1.5 truncate">
-                         <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                         <span className="truncate">{student.teacher || "无老师"}</span>
-                       </div>
+                    {/* ✅ 新的课时展示区域：分为两栏 */}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      {/* 左侧：剩余总课时 */}
+                      <div className={`p-2 rounded-lg border ${isTotalLow ? 'bg-slate-50 border-slate-100' : 'bg-slate-50 border-slate-100'}`}>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">剩余总课时</div>
+                        <div className={`text-lg font-black leading-none ${isTotalLow ? 'text-slate-500' : 'text-slate-700'}`}>
+                           {totalBalance} <span className="text-[10px] font-bold text-slate-400">h</span>
+                        </div>
+                      </div>
+
+                      {/* 右侧：待排课时 (重点高亮) */}
+                      <div className={`p-2 rounded-lg border relative overflow-hidden ${
+                        isOverbooked ? 'bg-rose-50 border-rose-100' : 
+                        hasUnscheduled ? 'bg-amber-50 border-amber-100' : 
+                        'bg-emerald-50 border-emerald-100'
+                      }`}>
+                         <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${
+                           isOverbooked ? 'text-rose-400' : hasUnscheduled ? 'text-amber-500' : 'text-emerald-500'
+                         }`}>
+                           {isOverbooked ? '已欠费/超排' : '剩余待排'}
+                         </div>
+                         <div className={`text-lg font-black leading-none ${
+                            isOverbooked ? 'text-rose-600' : hasUnscheduled ? 'text-amber-600' : 'text-emerald-600'
+                         }`}>
+                            {unscheduledHours} <span className="text-[10px] font-bold opacity-60">h</span>
+                         </div>
+                         {/* 待排 > 0 时显示一个小图标提示去排课 */}
+                         {hasUnscheduled && (
+                           <CalendarClock className="absolute right-2 bottom-2 h-4 w-4 text-amber-300/50" />
+                         )}
+                      </div>
                     </div>
                   </Link>
 
-                  <div className="px-4 py-2 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
-                     <span className="text-[10px] font-medium text-slate-400">
-                       ${student.hourly_rate}/hr
-                     </span>
+                  {/* 底部信息栏 */}
+                  <div className="px-4 py-2 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                     <div className="flex items-center gap-3 text-xs text-slate-400">
+                        <div className="flex items-center gap-1 max-w-[80px] truncate" title={student.subject}>
+                          <BookOpen className="h-3 w-3" /> {student.subject || "-"}
+                        </div>
+                        <div className="flex items-center gap-1 max-w-[80px] truncate" title={student.teacher}>
+                          <User className="h-3 w-3" /> {student.teacher || "-"}
+                        </div>
+                     </div>
+                     
                      <div className="flex items-center gap-1">
                         <Button 
                           size="sm" variant="ghost" 
-                          className="h-7 px-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 gap-1"
+                          className="h-7 px-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1"
                           onClick={() => setTopUpTarget(student)}
                         >
                           <Coins className="h-3.5 w-3.5" /> 充值
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-7 w-7">
-                              <MoreHorizontal className="h-4 w-4 text-slate-400" />
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-slate-300 hover:text-slate-600">
+                              <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
