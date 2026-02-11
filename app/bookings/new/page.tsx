@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, Clock, MapPin, User, BookOpen, GraduationCap } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin } from "lucide-react"; // ✅ 移除了 Clock 图标引入
 import { toast } from "sonner"; 
 
 export default function NewBookingPage() {
@@ -37,9 +37,9 @@ export default function NewBookingPage() {
       if (!currentBusinessId) return;
       const { data } = await supabase
         .from("students")
-        .select("id, name, student_code, subject") // 多查一个 subject 用于自动填充
+        .select("id, name, student_code, subject") 
         .eq("business_unit_id", currentBusinessId)
-        .order("name");
+        .order("student_code", { ascending: true }); // ✅ 修改：按学号正序排列
       
       if (data) setStudents(data);
     }
@@ -51,8 +51,6 @@ export default function NewBookingPage() {
     setSelectedStudent(studentId);
     const s = students.find(st => st.id === studentId);
     if (s && s.subject) {
-      // 尝试匹配默认科目，如果匹配不上(比如他填的是 'NCEA L2')，就保持为空让用户选，或者填入 'Other'
-      // 这里为了简单，如果 student.subject 包含关键字，就自动选上
       if (s.subject.toLowerCase().includes('math')) setSubject('Math');
       else if (s.subject.toLowerCase().includes('phys')) setSubject('Physics');
       else if (s.subject.toLowerCase().includes('chem')) setSubject('Chemistry');
@@ -74,8 +72,8 @@ export default function NewBookingPage() {
     formData.append("duration", duration);
     formData.append("location", location);
     formData.append("businessId", currentBusinessId);
-    formData.append("subject", subject); // ✅ 提交科目
-    formData.append("teacher", teacher); // ✅ 提交老师
+    formData.append("subject", subject);
+    formData.append("teacher", teacher);
 
     const result = await createBooking(null, formData);
     setIsLoading(false);
@@ -118,7 +116,6 @@ export default function NewBookingPage() {
                 <SelectContent className="max-h-60">
                   {students.map((s) => (
                     <SelectItem key={s.id} value={s.id} className="py-3 font-medium">
-                      {/* ✅ 格式：[1302] Elvis */}
                       <span className="font-mono text-slate-400 mr-2">
                         {s.student_code ? `[${s.student_code}]` : ''}
                       </span>
@@ -129,7 +126,7 @@ export default function NewBookingPage() {
               </Select>
             </div>
 
-            {/* 2. Subject & Teacher (New Row) */}
+            {/* 2. Subject & Teacher */}
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
                 <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">科目 (Subject)</Label>
@@ -173,8 +170,8 @@ export default function NewBookingPage() {
               <div className="space-y-2">
                 <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">开始时间 (Time)</Label>
                 <div className="relative">
+                   {/* ✅ 移除了重叠的 Clock Icon */}
                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl border-slate-200 bg-white font-medium" />
-                   <Clock className="absolute right-3 top-3.5 h-5 w-5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
             </div>
