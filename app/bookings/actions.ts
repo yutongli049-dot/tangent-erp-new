@@ -133,3 +133,84 @@ export async function deleteBooking(id: string) {
   revalidatePath("/finance");
   return { success: true };
 }
+
+// 6. 驾校极速排课 (合二为一)
+export async function quickCreateDrivingBooking(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "未登录" };
+
+  const businessId = formData.get("businessId") as string;
+  const identifier = formData.get("identifier") as string; 
+  const dateStr = formData.get("date") as string;
+  const timeStr = formData.get("time") as string;
+  const duration = Number(formData.get("duration"));
+  const location = formData.get("location") as string;
+  const actualRate = Number(formData.get("actualRate"));
+  
+  // ✅ 新增：接收科目和备注
+  const subject = formData.get("subject") as string;
+  const notes = formData.get("notes") as string;
+  
+  const metadata = {
+    useInstructorCar: formData.get("useInstructorCar") === "true",
+    needPickup: formData.get("needPickup") === "true",
+    pickupAddress: formData.get("pickupAddress") as string,
+    plateNumber: formData.get("plateNumber") as string,
+  };
+
+  if (!identifier || !dateStr || !timeStr) return { error: "信息不完整" };
+
+  let studentId = "";
+  const { data: existingStudent } = await supabase
+    .from("students")
+    .select("id")
+    .eq("business_unit_id", businessId)
+    .or(`student_code.eq.${identifier},name.eq.${identifier}`)
+    .limit(1)
+    .single();
+
+  if (existingStudent) {
+    studentId = existingStudent.id;
+  } else {
+    const { data: newStudent, error: createError } = await supabase
+      .from("students")
+      .insert({
+        name: identifier, 
+        student_code: identifier, 
+        business_unit_id: businessId,
+        level: "Driving",
+        balance: 0,
+        hourly_rate: actualRate 
+      })
+      .select("id")
+      .single();
+      
+    if (createError) return { error: "学员创建失败: " + createError.message };
+    studentId = newStudent.id;
+  }
+
+  const { fromZonedTime } = require("date-fns-tz");
+  const startDateTime = fromZonedTime(`${dateStr} ${timeStr}`, 'Pacific/Auckland');
+  const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+  const { error } = await supabase.from("bookings").insert({
+    student_id: studentId,
+    start_time: startDateTime.toISOString(),
+    end_time: endDateTime.toISOString(),
+    duration: duration,
+    location: location,
+    business_unit_id: businessId,
+    status: 'confirmed',
+    actual_rate: actualRate,
+    subject: subject || null,  // ✅ 存入科目
+    notes: notes || null,      // ✅ 存入备注
+    metadata: metadata
+  });
+
+  if (error) return { error: error.message };
+  
+  revalidatePath("/bookings");
+  revalidatePath("/students");
+  return { success: true };
+}

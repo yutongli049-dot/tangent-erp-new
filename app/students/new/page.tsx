@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Loader2, ArrowLeft, Wallet, GraduationCap, User, BookOpen, 
-  Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine 
+  Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, Car
 } from "lucide-react";
 import { toast } from "sonner"; 
 
@@ -36,6 +36,33 @@ export default function NewStudentPage() {
   const [balance, setBalance] = useState("0");
   const [level, setLevel] = useState("Year 11");
 
+  // ==========================================
+  // 🚗 拦截器：驾校模式下不需要此页面，直接引导去排课
+  // ==========================================
+  if (currentBusinessId.includes('sine')) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
+        <div className="hidden md:block"><Navbar /></div>
+        <main className="mx-auto max-w-xl px-4 py-20 text-center">
+           <div className="mx-auto h-20 w-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-sm">
+              <Car className="h-10 w-10" />
+           </div>
+           <h1 className="text-2xl font-black text-slate-900 mb-3">驾校模式专属流程</h1>
+           <p className="text-slate-500 mb-8 leading-relaxed">
+             为了提高效率，驾校业务采用了<strong className="text-indigo-600">“极速排课”</strong>模式。<br/>
+             您不需要在此单独录入学员档案，请直接去排课，<br/>系统会在排课时自动为新学员建档。
+           </p>
+           <Button onClick={() => router.push('/bookings/new')} className="h-14 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 font-bold text-base shadow-lg shadow-indigo-200 transition-all active:scale-95">
+             前往极速排课 &rarr;
+           </Button>
+        </main>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 📚 教培模式：标准的档案创建流程
+  // ==========================================
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -168,7 +195,7 @@ export default function NewStudentPage() {
                </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 mt-4" disabled={loading}>
+            <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 mt-4 transition-all active:scale-[0.98]" disabled={loading}>
               {loading ? <Loader2 className="animate-spin" /> : "确认创建档案"}
             </Button>
           </form>

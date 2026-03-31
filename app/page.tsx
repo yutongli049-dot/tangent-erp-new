@@ -17,7 +17,7 @@ import {
   Users, FileBarChart, LogOut, ChevronDown, Check, Building2
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-import { format, isAfter, isSameDay } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
 // 简单的下拉菜单组件 (避免依赖 shadcn/ui 组件库文件缺失)
@@ -84,7 +84,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
-  const [businessList, setBusinessList] = useState<any[]>([]); // 存储业务列表
+  const [businessList, setBusinessList] = useState<any[]>([]); 
   
   const [stats, setStats] = useState<any>({
     cashIncome: 0, netCashFlow: 0, realizedRevenue: 0, unearnedRevenue: 0,
@@ -109,13 +109,11 @@ export default function Home() {
         });
       }
 
-      // 2. 获取业务列表 (用于下拉菜单)
-      // 如果没有 business_units 表，这里可以写死 fallback
+      // 2. 获取业务列表
       const { data: units } = await supabase.from('business_units').select('id, name').order('name');
       if (units && units.length > 0) {
         setBusinessList(units);
       } else {
-        // Fallback data if table is empty
         setBusinessList([
           { id: 'cus', name: 'CuS Academy' },
           { id: 'sine', name: 'Sine Studio' },
@@ -154,9 +152,9 @@ export default function Home() {
   const greeting = hour < 12 ? "早安" : hour < 18 ? "下午好" : "晚上好";
   const GreetingIcon = hour < 18 ? Sun : Moon;
 
-  const now = new Date();
+  // ✅ 核心修改：只过滤状态为 'confirmed' 的课程，不再用当前时间直接剔除过去时间的课程
   const futureBookings = stats.calendarBookings
-    .filter((b: any) => isAfter(new Date(b.start_time), now))
+    .filter((b: any) => b.status === 'confirmed')
     .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   // 底部导航项
@@ -291,7 +289,6 @@ export default function Home() {
 
             {/* Desktop Grid */}
             <div className="hidden md:grid grid-cols-3 gap-6 px-6">
-               {/* ... (Desktop cards code remains same) ... */}
                <Link href="/finance" className="block hover:scale-[1.02] transition-transform relative group">
                   <div className="h-48 rounded-3xl bg-indigo-600 p-6 text-white shadow-lg relative overflow-hidden">
                      <div className="z-10 relative">
@@ -323,11 +320,10 @@ export default function Home() {
         <div className="flex-1 px-5 pt-0 pb-24 md:pb-6 md:px-6 max-w-7xl mx-auto w-full md:grid md:grid-cols-3 md:gap-8 overflow-y-auto md:overflow-visible">
           
           <div className="md:col-span-2 flex flex-col">
-             {/* ✅ 修复：不透明背景 + z-index，防止列表内容透出来 */}
              <div className="sticky top-0 bg-slate-50 z-30 py-4 border-b border-slate-100/50 mb-2 shadow-[0_4px_10px_-10px_rgba(0,0,0,0.1)]">
                <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                  <CalendarIcon className="h-5 w-5 text-indigo-600" />
-                 未来课程 <span className="text-slate-400 font-normal text-xs ml-1">({futureBookings.length})</span>
+                 待办课程 <span className="text-slate-400 font-normal text-xs ml-1">({futureBookings.length})</span>
                </h3>
              </div>
 
@@ -335,7 +331,7 @@ export default function Home() {
                {loading ? (
                  <div className="h-40 flex items-center justify-center"><Loader2 className="animate-spin text-slate-300"/></div>
                ) : futureBookings.length === 0 ? (
-                 <div className="text-center py-12"><p className="text-slate-400 text-xs">暂无未来课程安排 ☕️</p></div>
+                 <div className="text-center py-12"><p className="text-slate-400 text-xs">暂无待办课程安排 ☕️</p></div>
                ) : (
                  <div className="space-y-3 relative pl-4 pb-4">
                    <div className="absolute left-[26px] top-6 bottom-6 w-0.5 bg-slate-200 z-0 rounded-full"></div>
@@ -375,12 +371,12 @@ export default function Home() {
                                <div className="flex items-center gap-3 text-xs text-slate-600 mb-2">
                                   <span className="flex items-center gap-1 truncate max-w-[120px]">
                                     <BookOpen className="h-3.5 w-3.5 text-indigo-400" /> 
-                                    {student.subject || "无科目"}
+                                    {student.subject || b.subject || "无科目"}
                                   </span>
                                   <span className="h-3 w-px bg-slate-200"></span>
                                   <span className="flex items-center gap-1 truncate">
                                     <User className="h-3.5 w-3.5 text-emerald-500" />
-                                    {student.teacher || "无老师"}
+                                    {student.teacher || b.teacher || "无老师"}
                                   </span>
                                </div>
 
