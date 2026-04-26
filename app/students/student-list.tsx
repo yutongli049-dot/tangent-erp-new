@@ -34,7 +34,7 @@ export function StudentList({ students }: { students: any[] }) {
   // 🧠 核心：智能过滤与分组引擎
   const { activeStudents, inactiveStudents } = useMemo(() => {
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 14);
 
     const filtered = students.filter(s => {
       const matchBusiness = currentBusinessId === "tangent" || s.business_unit_id === currentBusinessId;
