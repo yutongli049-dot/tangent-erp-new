@@ -9,9 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Trash2, Loader2, User, BookOpen, Pencil, 
-  Search, Coins, MoreHorizontal, CalendarClock, ArchiveX, ChevronDown, ChevronUp, GraduationCap
+  Search, Coins, MoreHorizontal, CalendarClock, ArchiveX, 
+  ChevronDown, ChevronUp, GraduationCap, Filter, SortAsc, SortDesc
 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -21,55 +23,89 @@ export function StudentList({ students }: { students: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   
+  // --- 筛选与排序状态 ---
+  const [filterTeacher, setFilterTeacher] = useState("all");
+  const [filterSubject, setFilterSubject] = useState("all");
+  const [sortKey, setSortKey] = useState("student_code"); // student_code, name, balance
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
   const [editingStudent, setEditingStudent] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
-
   const [topUpTarget, setTopUpTarget] = useState<any>(null);
   const [topUpAmount, setTopUpAmount] = useState("10");
-
   const [showInactive, setShowInactive] = useState(false);
 
-  // 智能过滤与分组引擎 (14天沉睡判定)
+  // --- 动态提取筛选选项 ---
+  const teachers = useMemo(() => {
+    const set = new Set(students.map(s => s.teacher).filter(Boolean));
+    return Array.from(set);
+  }, [students]);
+
+  const subjects = useMemo(() => {
+    const set = new Set(students.map(s => s.subject).filter(Boolean));
+    return Array.from(set);
+  }, [students]);
+
+  // --- 核心过滤与排序引擎 ---
   const { activeStudents, inactiveStudents } = useMemo(() => {
     const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14); // ✅ 14天判定
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    const filtered = students.filter(s => {
+    let list = students.filter(s => {
+      // 1. 业务线过滤
       const matchBusiness = currentBusinessId === "tangent" || s.business_unit_id === currentBusinessId;
       if (!matchBusiness) return false;
-      if (!searchTerm) return true;
+
+      // 2. 搜索过滤
       const lowerTerm = searchTerm.toLowerCase();
-      return (
-        s.name.toLowerCase().includes(lowerTerm) || 
-        (s.student_code && s.student_code.toLowerCase().includes(lowerTerm))
-      );
+      const matchSearch = !searchTerm || s.name.toLowerCase().includes(lowerTerm) || (s.student_code && s.student_code.toLowerCase().includes(lowerTerm));
+      if (!matchSearch) return false;
+
+      // 3. 老师过滤
+      if (filterTeacher !== "all" && s.teacher !== filterTeacher) return false;
+
+      // 4. 学科过滤
+      if (filterSubject !== "all" && s.subject !== filterSubject) return false;
+
+      return true;
+    });
+
+    // 5. 执行排序
+    list.sort((a, b) => {
+      let valA = a[sortKey] || "";
+      let valB = b[sortKey] || "";
+
+      // 数字处理 (余额/学号数字部分)
+      if (sortKey === 'balance') {
+        return sortOrder === 'asc' ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
+      }
+
+      // 字符串处理
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+      if (sortOrder === 'asc') return strA.localeCompare(strB);
+      return strB.localeCompare(strA);
     });
 
     const active: any[] = [];
     const inactive: any[] = [];
 
-    filtered.forEach(student => {
+    list.forEach(student => {
       let isActive = false;
-      
       if (Number(student.balance) > 0) isActive = true;
       else if (new Date(student.created_at) > fourteenDaysAgo) isActive = true;
-      else if (student.bookings && student.bookings.length > 0) {
-        const hasRecentBooking = student.bookings.some((b: any) => {
-          if (!b.start_time) return false;
-          return new Date(b.start_time) > fourteenDaysAgo;
-        });
-        if (hasRecentBooking) isActive = true;
-      }
-
-      if (searchTerm) isActive = true;
+      else if (student.bookings?.some((b: any) => b.start_time && new Date(b.start_time) > fourteenDaysAgo)) isActive = true;
+      
+      if (searchTerm || filterTeacher !== "all" || filterSubject !== "all") isActive = true;
 
       if (isActive) active.push(student);
       else inactive.push(student);
     });
 
     return { activeStudents: active, inactiveStudents: inactive };
-  }, [students, currentBusinessId, searchTerm]);
+  }, [students, currentBusinessId, searchTerm, filterTeacher, filterSubject, sortKey, sortOrder]);
 
+  // (API调用逻辑保持不变: handleDelete, handleSaveEdit, handleTopUp, Avatar...)
   const handleDelete = async (id: string) => {
     if (!confirm("确定删除该学员吗？这将同时删除其历史记录。")) return;
     setLoadingId(id);
@@ -116,7 +152,6 @@ export function StudentList({ students }: { students: any[] }) {
     );
   };
 
-  // ✅ 全新的行式 (Row-by-Row) 渲染逻辑
   const renderStudentRows = (list: any[]) => {
     return list.map((student) => {
       const totalBalance = Number(student.balance);
@@ -124,26 +159,14 @@ export function StudentList({ students }: { students: any[] }) {
       const scheduledHours = bookings.filter((b: any) => b.status === 'confirmed').reduce((sum: number, b: any) => sum + Number(b.duration), 0);
       const unscheduledHours = totalBalance - scheduledHours;
 
-      const isTotalLow = totalBalance < 3;
-      const hasUnscheduled = unscheduledHours > 0;
-      const isOverbooked = unscheduledHours < 0;
-
       return (
         <div key={student.id} className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 hover:shadow-md transition-all gap-4">
-          
-          {/* 左侧：学员信息 (点击可进入详情) */}
           <Link href={`/students/${student.id}`} className="flex items-center gap-4 flex-1 min-w-0">
             <Avatar name={student.name} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-base truncate">
-                  {student.name}
-                </h3>
-                {student.student_code && (
-                  <Badge variant="outline" className="text-[10px] h-4 px-1.5 rounded-sm border-slate-200 text-slate-500 font-mono">
-                    {student.student_code}
-                  </Badge>
-                )}
+                <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-base truncate">{student.name}</h3>
+                {student.student_code && <Badge variant="outline" className="text-[10px] h-4 px-1.5 rounded-sm border-slate-200 text-slate-500 font-mono">{student.student_code}</Badge>}
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-500 truncate">
                  <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-slate-400"/> {student.level || "-"}</span>
@@ -152,41 +175,18 @@ export function StudentList({ students }: { students: any[] }) {
               </div>
             </div>
           </Link>
-
-          {/* 右侧：数据看板与操作 */}
           <div className="flex items-center justify-between md:justify-end gap-6 border-t border-slate-100 md:border-t-0 pt-3 md:pt-0">
-             
-             {/* 课时数据栏 */}
              <Link href={`/students/${student.id}`} className="flex items-center gap-4">
-                <div className="flex flex-col items-end">
-                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总课时</span>
-                   <span className={`text-base font-black ${isTotalLow ? 'text-slate-400' : 'text-slate-700'}`}>
-                     {totalBalance}<span className="text-[10px] font-bold ml-0.5">h</span>
-                   </span>
-                </div>
-                
+                <div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总课时</span><span className={`text-base font-black ${totalBalance < 3 ? 'text-slate-400' : 'text-slate-700'}`}>{totalBalance}<span className="text-[10px] font-bold ml-0.5">h</span></span></div>
                 <div className="h-8 w-px bg-slate-200"></div>
-
                 <div className="flex flex-col items-end w-16">
-                   <span className={`text-[10px] font-bold uppercase tracking-wider ${isOverbooked ? 'text-rose-400' : hasUnscheduled ? 'text-amber-500' : 'text-emerald-500'}`}>
-                     {isOverbooked ? '欠费/超排' : '待排'}
-                   </span>
-                   <div className={`text-base font-black flex items-center gap-1 ${isOverbooked ? 'text-rose-600' : hasUnscheduled ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {unscheduledHours}<span className="text-[10px] font-bold">h</span>
-                      {hasUnscheduled && <CalendarClock className="h-3.5 w-3.5 ml-0.5" />}
-                   </div>
+                   <span className={`text-[10px] font-bold uppercase tracking-wider ${unscheduledHours < 0 ? 'text-rose-400' : unscheduledHours > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{unscheduledHours < 0 ? '欠费/超排' : '待排'}</span>
+                   <div className={`text-base font-black flex items-center gap-1 ${unscheduledHours < 0 ? 'text-rose-600' : unscheduledHours > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>{unscheduledHours}<span className="text-[10px] font-bold">h</span>{unscheduledHours > 0 && <CalendarClock className="h-3.5 w-3.5 ml-0.5" />}</div>
                 </div>
              </Link>
-
-             {/* 操作按钮栏 */}
              <div className="flex items-center gap-1">
-                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1.5 rounded-lg" onClick={() => setTopUpTarget(student)}>
-                  <Coins className="h-4 w-4" /> 充值
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700"><MoreHorizontal className="h-4 w-4" /></Button>
-                  </DropdownMenuTrigger>
+                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1.5 rounded-lg" onClick={() => setTopUpTarget(student)}><Coins className="h-4 w-4" /> 充值</Button>
+                <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-xl">
                     <DropdownMenuItem onClick={() => setEditingStudent(student)}><Pencil className="mr-2 h-4 w-4" /> 编辑资料</DropdownMenuItem>
                     <DropdownMenuItem className="text-rose-600 focus:text-rose-600" onClick={() => handleDelete(student.id)}><Trash2 className="mr-2 h-4 w-4" /> 删除学员</DropdownMenuItem>
@@ -200,15 +200,59 @@ export function StudentList({ students }: { students: any[] }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-        <Input 
-          placeholder="搜索姓名或学号..." 
-          className="pl-9 h-12 rounded-xl bg-white border-slate-200 shadow-sm focus-visible:ring-indigo-500 text-base"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <div className="space-y-4">
+      {/* --- 顶栏：搜索、筛选与排序 --- */}
+      <div className="flex flex-col gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input placeholder="搜索姓名或学号..." className="pl-9 h-12 rounded-xl bg-white border-slate-200 shadow-sm text-base" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          {/* 老师筛选 */}
+          <Select value={filterTeacher} onValueChange={setFilterTeacher}>
+            <SelectTrigger className="h-9 w-[120px] rounded-lg bg-white border-slate-200 text-xs font-bold">
+              <div className="flex items-center gap-1.5 text-slate-500"><User className="h-3.5 w-3.5"/> <SelectValue placeholder="老师" /></div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有老师</SelectItem>
+              {teachers.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {/* 学科筛选 */}
+          <Select value={filterSubject} onValueChange={setFilterSubject}>
+            <SelectTrigger className="h-9 w-[120px] rounded-lg bg-white border-slate-200 text-xs font-bold">
+              <div className="flex items-center gap-1.5 text-slate-500"><BookOpen className="h-3.5 w-3.5"/> <SelectValue placeholder="学科" /></div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有学科</SelectItem>
+              {subjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {/* 排序字段 */}
+          <Select value={sortKey} onValueChange={setSortKey}>
+            <SelectTrigger className="h-9 w-[130px] rounded-lg bg-white border-slate-200 text-xs font-bold">
+              <div className="flex items-center gap-1.5 text-indigo-600"><SortAsc className="h-3.5 w-3.5"/> <SelectValue placeholder="排序" /></div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student_code">按学员编号</SelectItem>
+              <SelectItem value="name">按姓名 A-Z</SelectItem>
+              <SelectItem value="balance">按剩余课时</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* 排序方向 */}
+          <Button variant="ghost" size="icon" className="h-9 w-9 bg-white border border-slate-200 rounded-lg text-slate-500" onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}>
+             {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+          </Button>
+
+          {/* 重置 */}
+          {(filterTeacher !== "all" || filterSubject !== "all" || searchTerm) && (
+            <Button variant="link" className="text-[10px] h-9 text-slate-400 font-bold" onClick={() => {setFilterTeacher("all"); setFilterSubject("all"); setSearchTerm("");}}>清除筛选</Button>
+          )}
+        </div>
       </div>
 
       {(activeStudents.length === 0 && inactiveStudents.length === 0) ? (
@@ -217,44 +261,25 @@ export function StudentList({ students }: { students: any[] }) {
            <p className="text-slate-500 font-medium text-sm">未找到匹配的学员</p>
         </div>
       ) : (
-        <div className="space-y-8">
-           
-           {/* 1. 活跃学员列表 (改为了 flex-col space-y-3 实现垂直行列表) */}
-           {activeStudents.length > 0 && (
-             <div className="flex flex-col gap-3">
-               {renderStudentRows(activeStudents)}
-             </div>
-           )}
-
-           {/* 2. 非活跃学员折叠区 */}
+        <div className="space-y-6">
+           {activeStudents.length > 0 && <div className="flex flex-col gap-2">{renderStudentRows(activeStudents)}</div>}
            {inactiveStudents.length > 0 && (
              <div className="pt-2">
-               <div className="flex items-center gap-4 mb-6">
+               <div className="flex items-center gap-4 mb-4">
                  <div className="h-px bg-slate-200 flex-1"></div>
-                 <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="rounded-full text-xs font-bold text-slate-500 gap-2 border-slate-200 bg-slate-50 hover:bg-slate-100 shadow-sm transition-all" 
-                    onClick={() => setShowInactive(!showInactive)}
-                 >
-                    <ArchiveX className="h-4 w-4" />
-                    {showInactive ? "收起沉睡名单" : `展开 ${inactiveStudents.length} 名沉睡学员`}
+                 <Button variant="outline" size="sm" className="rounded-full text-xs font-bold text-slate-500 gap-2 border-slate-200 bg-slate-50" onClick={() => setShowInactive(!showInactive)}>
+                    <ArchiveX className="h-4 w-4" />{showInactive ? "收起沉睡名单" : `展开 ${inactiveStudents.length} 名沉睡学员`}
                     {showInactive ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                  </Button>
                  <div className="h-px bg-slate-200 flex-1"></div>
                </div>
-
-               {showInactive && (
-                 <div className="flex flex-col gap-3 opacity-75 grayscale-[20%] transition-all animate-in fade-in slide-in-from-top-4">
-                   {renderStudentRows(inactiveStudents)}
-                 </div>
-               )}
+               {showInactive && <div className="flex flex-col gap-2 opacity-75 grayscale-[20%] transition-all animate-in fade-in slide-in-from-top-4">{renderStudentRows(inactiveStudents)}</div>}
              </div>
            )}
         </div>
       )}
 
-      {/* 编辑弹窗 */}
+      {/* 弹窗部分 (编辑/充值) 保持不变... */}
       <Dialog open={!!editingStudent} onOpenChange={(open) => !open && setEditingStudent(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader><DialogTitle>编辑学员信息</DialogTitle></DialogHeader>
@@ -264,17 +289,13 @@ export function StudentList({ students }: { students: any[] }) {
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">学号</Label><Input value={editingStudent.student_code || ""} onChange={(e) => setEditingStudent({...editingStudent, student_code: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">科目</Label><Input value={editingStudent.subject || ""} onChange={(e) => setEditingStudent({...editingStudent, subject: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">老师</Label><Input value={editingStudent.teacher || ""} onChange={(e) => setEditingStudent({...editingStudent, teacher: e.target.value})} className="col-span-3 h-9" /></div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right text-xs text-slate-500">费率</Label>
-                <div className="col-span-3 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span><Input type="number" value={editingStudent.hourly_rate} onChange={(e) => setEditingStudent({...editingStudent, hourly_rate: e.target.value})} className="pl-6 h-9" /></div>
-              </div>
+              <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">费率</Label><div className="col-span-3 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span><Input type="number" value={editingStudent.hourly_rate} onChange={(e) => setEditingStudent({...editingStudent, hourly_rate: e.target.value})} className="pl-6 h-9" /></div></div>
             </div>
           )}
-          <DialogFooter><Button onClick={handleSaveEdit} disabled={editLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl">{editLoading ? <Loader2 className="animate-spin" /> : "保存修改"}</Button></DialogFooter>
+          <DialogFooter><Button onClick={handleSaveEdit} disabled={editLoading} className="w-full bg-indigo-600 rounded-xl">{editLoading ? <Loader2 className="animate-spin" /> : "保存修改"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 充值弹窗 */}
       <Dialog open={!!topUpTarget} onOpenChange={(open) => !open && setTopUpTarget(null)}>
         <DialogContent className="sm:max-w-[325px] rounded-3xl">
           <DialogHeader className="text-center"><DialogTitle className="text-xl">课时充值</DialogTitle><p className="text-xs text-slate-500">为 {topUpTarget?.name} 增加课时</p></DialogHeader>
@@ -289,10 +310,9 @@ export function StudentList({ students }: { students: any[] }) {
                 {[5, 10, 20].map(amt => (<button key={amt} onClick={() => setTopUpAmount(String(amt))} className="bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 py-2 rounded-xl text-xs font-bold transition-colors">+{amt}</button>))}
              </div>
           </div>
-          <DialogFooter><Button onClick={handleTopUp} disabled={!!loadingId} className="w-full bg-emerald-600 hover:bg-emerald-700 rounded-xl h-12 text-base font-bold shadow-lg shadow-emerald-200">{loadingId ? <Loader2 className="animate-spin" /> : "确认充值"}</Button></DialogFooter>
+          <DialogFooter><Button onClick={handleTopUp} disabled={!!loadingId} className="w-full bg-emerald-600 hover:bg-emerald-700 rounded-xl h-12 font-bold shadow-lg shadow-emerald-200">{loadingId ? <Loader2 className="animate-spin" /> : "确认充值"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }
