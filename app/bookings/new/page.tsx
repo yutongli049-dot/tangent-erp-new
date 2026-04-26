@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner"; 
 
 const VTNZ_LOCATIONS = [
@@ -57,49 +57,106 @@ export default function NewBookingPage() {
   );
 }
 
-// 提取的复用组件：Zoom 风格循环选择器
-function RecurrenceSelector({ repeatMode, setRepeatMode, endMode, setEndMode, repeatCount, setRepeatCount, endDate, setEndDate }: any) {
+// ✅ 提取复用：高度复杂的 Zoom 级循环构建器
+function RecurrenceSelector({ 
+  repeatMode, setRepeatMode, 
+  endMode, setEndMode, 
+  repeatCount, setRepeatCount, 
+  endDate, setEndDate,
+  time, setTime,
+  weeklySchedule, setWeeklySchedule
+}: any) {
   return (
-    <div className="col-span-2 space-y-3 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50">
-      <div className="space-y-2">
-        <Label className="text-xs text-indigo-600 font-bold uppercase pl-1 flex items-center gap-1"><Repeat className="h-3 w-3"/> 循环排课 (Recurrence)</Label>
-        <Select value={repeatMode} onValueChange={setRepeatMode}>
-          <SelectTrigger className={`h-12 rounded-xl bg-white ${repeatMode !== "none" ? 'border-indigo-300 font-bold text-indigo-700' : 'border-slate-200'}`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">不循环 (单次预约)</SelectItem>
-            <SelectItem value="weekly">每周重复 (Weekly)</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="col-span-2 space-y-3 bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/50 transition-all">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-xs text-indigo-700 font-bold uppercase pl-1 flex items-center gap-1"><Repeat className="h-3 w-3"/> 排课模式</Label>
+          <Select value={repeatMode} onValueChange={setRepeatMode}>
+            <SelectTrigger className={`h-12 rounded-xl bg-white ${repeatMode !== "none" ? 'border-indigo-400 font-bold text-indigo-700 shadow-sm' : 'border-slate-200'}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">单次 (No repeat)</SelectItem>
+              <SelectItem value="weekly">每周重复 (Weekly)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* 单次模式时显示常规时间 */}
+        {repeatMode === 'none' && (
+          <div className="space-y-2 animate-in fade-in zoom-in-95">
+            <Label className="text-xs text-slate-500 font-bold pl-1">上课时间 (Time)</Label>
+            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="h-12 rounded-xl bg-white" />
+          </div>
+        )}
       </div>
 
+      {/* 循环模式时显示时间表构建器 */}
       {repeatMode === 'weekly' && (
-        <div className="grid grid-cols-2 gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
-           <div className="space-y-2">
-             <Label className="text-xs text-slate-500 font-bold pl-1">结束条件</Label>
-             <Select value={endMode} onValueChange={setEndMode}>
-               <SelectTrigger className="h-10 rounded-xl bg-white border-slate-200">
-                 <SelectValue />
-               </SelectTrigger>
-               <SelectContent>
-                 <SelectItem value="count">按次数结束</SelectItem>
-                 <SelectItem value="date">按日期结束</SelectItem>
-               </SelectContent>
-             </Select>
+        <div className="space-y-4 pt-3 mt-2 border-t border-indigo-100 animate-in fade-in slide-in-from-top-2">
+           <div>
+             <Label className="text-xs font-bold text-indigo-700 mb-2 block">每周上课时间 (Weekly Schedule)</Label>
+             <div className="space-y-2">
+               {weeklySchedule.map((session: any, index: number) => (
+                  <div key={index} className="flex items-center gap-2">
+                     <Select value={session.dayOfWeek} onValueChange={(val) => {
+                         const newSchedule = [...weeklySchedule];
+                         newSchedule[index].dayOfWeek = val;
+                         setWeeklySchedule(newSchedule);
+                     }}>
+                        <SelectTrigger className="h-10 bg-white border-slate-200 shadow-sm"><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="1">周一 (Mon)</SelectItem><SelectItem value="2">周二 (Tue)</SelectItem>
+                           <SelectItem value="3">周三 (Wed)</SelectItem><SelectItem value="4">周四 (Thu)</SelectItem>
+                           <SelectItem value="5">周五 (Fri)</SelectItem><SelectItem value="6">周六 (Sat)</SelectItem>
+                           <SelectItem value="0">周日 (Sun)</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <Input type="time" value={session.time} onChange={(e) => {
+                         const newSchedule = [...weeklySchedule];
+                         newSchedule[index].time = e.target.value;
+                         setWeeklySchedule(newSchedule);
+                     }} className="h-10 bg-white border-slate-200 shadow-sm" />
+                     {weeklySchedule.length > 1 && (
+                         <Button variant="ghost" size="icon" type="button" onClick={() => setWeeklySchedule(weeklySchedule.filter((_: any, i: number) => i !== index))} className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 h-10 w-10 shrink-0">
+                           <Trash2 className="h-4 w-4"/>
+                         </Button>
+                     )}
+                  </div>
+               ))}
+               <Button type="button" variant="outline" size="sm" className="w-full h-10 border-dashed border-indigo-300 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100 mt-2" onClick={() => setWeeklySchedule([...weeklySchedule, { dayOfWeek: "1", time: "16:00" }])}>
+                 + 增加一天上课时间 (Add Time)
+               </Button>
+             </div>
            </div>
-           
-           {endMode === 'count' ? (
+
+           <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-indigo-100">
              <div className="space-y-2">
-               <Label className="text-xs text-slate-500 font-bold pl-1">重复总次数 (含首节)</Label>
-               <Input type="number" min="2" max="52" value={repeatCount} onChange={e => setRepeatCount(e.target.value)} className="h-10 rounded-xl bg-white" />
+               <Label className="text-xs text-slate-500 font-bold pl-1">结束条件</Label>
+               <Select value={endMode} onValueChange={setEndMode}>
+                 <SelectTrigger className="h-10 rounded-xl bg-white border-slate-200"><SelectValue /></SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="count">按周数结束</SelectItem>
+                   <SelectItem value="date">按日期结束</SelectItem>
+                 </SelectContent>
+               </Select>
              </div>
-           ) : (
-             <div className="space-y-2">
-               <Label className="text-xs text-slate-500 font-bold pl-1 flex items-center gap-1"><CalendarCheck className="h-3 w-3"/> 截止日期</Label>
-               <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="h-10 rounded-xl bg-white" />
-             </div>
-           )}
+             
+             {endMode === 'count' ? (
+               <div className="space-y-2">
+                 <Label className="text-xs text-slate-500 font-bold pl-1">重复总周数</Label>
+                 <div className="relative">
+                   <Input type="number" min="2" max="52" value={repeatCount} onChange={e => setRepeatCount(e.target.value)} className="h-10 rounded-xl bg-white pr-8" />
+                   <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">周</span>
+                 </div>
+               </div>
+             ) : (
+               <div className="space-y-2">
+                 <Label className="text-xs text-slate-500 font-bold pl-1 flex items-center gap-1"><CalendarCheck className="h-3 w-3"/> 截止日期</Label>
+                 <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="h-10 rounded-xl bg-white" />
+               </div>
+             )}
+           </div>
         </div>
       )}
     </div>
@@ -120,11 +177,12 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [subject, setSubject] = useState("限制性 (Restricted)"); 
   const [notes, setNotes] = useState("");
   
-  // ✅ Zoom 循环参数
+  // Zoom 循环参数
   const [repeatMode, setRepeatMode] = useState("none");
   const [endMode, setEndMode] = useState("count");
   const [repeatCount, setRepeatCount] = useState("10");
   const [endDate, setEndDate] = useState("");
+  const [weeklySchedule, setWeeklySchedule] = useState([{ dayOfWeek: "1", time: "10:00" }]);
 
   const [useInstructorCar, setUseInstructorCar] = useState(true);
   const [actualRate, setActualRate] = useState("85"); 
@@ -136,12 +194,9 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!identifier || !date || !time || !location || !subject) {
-      toast.warning("请补全必填信息"); return;
-    }
-    if (repeatMode === 'weekly' && endMode === 'date' && !endDate) {
-      toast.warning("请选择结束日期"); return;
-    }
+    if (!identifier || !date || !location || !subject) { toast.warning("请补全必填信息"); return; }
+    if (repeatMode === 'none' && !time) { toast.warning("请填写时间"); return; }
+    if (repeatMode === 'weekly' && endMode === 'date' && !endDate) { toast.warning("请选择结束日期"); return; }
 
     setIsLoading(true);
     const formData = new FormData();
@@ -161,6 +216,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     formData.append("endMode", endMode);
     formData.append("repeatCount", repeatCount);
     formData.append("endDate", endDate);
+    formData.append("weeklySchedule", JSON.stringify(weeklySchedule));
 
     if (notes) formData.append("notes", notes);
     if (pickupAddress) formData.append("pickupAddress", pickupAddress);
@@ -203,14 +259,13 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
                 <SelectContent className="max-h-60">{VTNZ_LOCATIONS.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
               </Select>
            </div>
-           <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">日期</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
-              <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl" /></div>
-              <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长(h)</Label><Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl" /></div>
+           <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Start Date)</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
+              <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">单节时长 (Hours)</Label><div className="relative"><Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div></div>
            </div>
            
            {/* Zoom Selector */}
-           <RecurrenceSelector repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} />
+           <RecurrenceSelector repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} time={time} setTime={setTime} weeklySchedule={weeklySchedule} setWeeklySchedule={setWeeklySchedule} />
         </div>
 
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-4">
@@ -254,11 +309,12 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
   const [teacher, setTeacher] = useState("Henry");
   const [notes, setNotes] = useState("");
   
-  // ✅ Zoom 循环参数
+  // Zoom 循环参数
   const [repeatMode, setRepeatMode] = useState("none");
   const [endMode, setEndMode] = useState("count");
   const [repeatCount, setRepeatCount] = useState("10");
   const [endDate, setEndDate] = useState("");
+  const [weeklySchedule, setWeeklySchedule] = useState([{ dayOfWeek: "1", time: "16:00" }]);
 
   useEffect(() => {
     async function fetchStudents() {
@@ -280,10 +336,9 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStudent || !date || !time) { toast.warning("请补全信息"); return; }
-    if (repeatMode === 'weekly' && endMode === 'date' && !endDate) {
-      toast.warning("请选择结束日期"); return;
-    }
+    if (!selectedStudent || !date || !location) { toast.warning("请补全信息"); return; }
+    if (repeatMode === 'none' && !time) { toast.warning("请填写时间"); return; }
+    if (repeatMode === 'weekly' && endMode === 'date' && !endDate) { toast.warning("请选择结束日期"); return; }
 
     setIsLoading(true);
     const formData = new FormData();
@@ -301,6 +356,7 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
     formData.append("endMode", endMode);
     formData.append("repeatCount", repeatCount);
     formData.append("endDate", endDate);
+    formData.append("weeklySchedule", JSON.stringify(weeklySchedule));
 
     if (notes) formData.append("notes", notes); 
 
@@ -357,14 +413,13 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
-          <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl" /></div>
-          <div className="space-y-2 col-span-1"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长</Label><div className="relative"><Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div></div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Start Date)</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
+          <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">单节时长 (Hours)</Label><div className="relative"><Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div></div>
         </div>
         
         {/* Zoom Selector */}
-        <RecurrenceSelector repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} />
+        <RecurrenceSelector repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} time={time} setTime={setTime} weeklySchedule={weeklySchedule} setWeeklySchedule={setWeeklySchedule} />
 
         <div className="space-y-2">
             <Label className="text-xs text-slate-400 font-bold uppercase pl-1">地点 (Location)</Label>
@@ -376,7 +431,7 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl border-slate-200 bg-white" placeholder="选填..." />
         </div>
 
-        <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-base font-bold shadow-lg shadow-indigo-200 mt-4">
+        <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-base font-bold shadow-lg shadow-indigo-200 mt-4 transition-all active:scale-95">
           {isLoading ? <><Loader2 className="mr-2 h-5 animate-spin" /> 创建中...</> : (repeatMode === "none" ? "确认预约" : "批量生成")}
         </Button>
       </form>

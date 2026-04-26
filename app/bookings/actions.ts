@@ -4,15 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fromZonedTime } from "date-fns-tz"; 
 
-// 1. 创建预约 (教培) - ✅ Zoom级高级循环排课
+// 1. 创建预约 (教培) - ✅ 终极版：支持多天/多时段智能循环排课
 export async function createBooking(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "未登录" };
 
   const studentId = formData.get("studentId") as string;
-  const dateStr = formData.get("date") as string;
-  const timeStr = formData.get("time") as string;
+  const dateStr = formData.get("date") as string; // 首节日期
+  const timeStr = formData.get("time") as string; // 单次排课时的时间
   const duration = Number(formData.get("duration"));
   const location = formData.get("location") as string;
   const businessId = formData.get("businessId") as string;
@@ -20,50 +20,86 @@ export async function createBooking(prevState: any, formData: FormData) {
   const teacher = formData.get("teacher") as string;
   const notes = formData.get("notes") as string;
   
-  // ✅ 接收循环排课参数
   const repeatMode = formData.get("repeatMode") as string || "none"; 
   const endMode = formData.get("endMode") as string || "count"; 
   const repeatCount = Number(formData.get("repeatCount")) || 1;
   const endDateStr = formData.get("endDate") as string;
 
-  if (!studentId || !dateStr || !timeStr) return { error: "信息不完整" };
+  if (!studentId || !dateStr) return { error: "信息不完整" };
 
   const timeZone = 'Pacific/Auckland';
-  const bookingsToInsert = [];
   
-  let currentStart = fromZonedTime(`${dateStr} ${timeStr}`, timeZone);
-  let count = 0;
-  const maxLoops = 52; // 安全限制：最多排一年的课 (52周)
-  
+  // 🧠 解析排课时间表
+  let schedule: { dayOfWeek: string, time: string }[] = [];
+  if (repeatMode === 'weekly') {
+      const wsStr = formData.get("weeklySchedule") as string;
+      if (wsStr) {
+          try { schedule = JSON.parse(wsStr); } catch(e) { console.error(e); }
+      }
+  } else {
+      // 单次排课：直接从首节日期提取星期几
+      schedule = [{ dayOfWeek: fromZonedTime(`${dateStr} 00:00:00`, timeZone).getDay().toString(), time: timeStr }];
+  }
+
+  // 计算基准起点
+  const startDateObj = fromZonedTime(`${dateStr} 00:00:00`, timeZone);
+  const startDayOfWeek = startDateObj.getDay(); // 0(Sun) - 6(Sat)
+
   let targetEndDate: Date | null = null;
   if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
     targetEndDate = fromZonedTime(`${endDateStr} 23:59:59`, timeZone);
   }
 
-  // ✅ 智能循环生成器
-  while (count < maxLoops) {
-    if (repeatMode === 'none' && count >= 1) break;
-    if (repeatMode === 'weekly' && endMode === 'count' && count >= repeatCount) break;
-    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate && currentStart > targetEndDate) break;
+  const bookingsToInsert = [];
+  let weeksProcessed = 0;
+  const maxLoops = 52; // 安全阀：最多排一年
 
-    const endDateTime = new Date(currentStart.getTime() + duration * 60 * 60 * 1000);
+  while (weeksProcessed < maxLoops) {
+    if (repeatMode === 'none' && weeksProcessed >= 1) break;
+    if (repeatMode === 'weekly' && endMode === 'count' && weeksProcessed >= repeatCount) break;
 
-    bookingsToInsert.push({
-      student_id: studentId,
-      start_time: currentStart.toISOString(),
-      end_time: endDateTime.toISOString(),
-      duration: duration,
-      location: location,
-      business_unit_id: businessId,
-      status: 'confirmed',
-      subject: subject || null,
-      teacher: teacher || null,
-      notes: notes || null
-    });
+    for (const session of schedule) {
+      const dayDiff = Number(session.dayOfWeek) - startDayOfWeek;
+      const daysToAdd = (weeksProcessed * 7) + dayDiff;
+      
+      // 核心逻辑：如果在第0周，且排课表里的星期几早于“首节日期”，则跳过（比如周三开始，排课表里有周一，则第一周跳过周一）
+      if (weeksProcessed === 0 && dayDiff < 0) continue;
 
-    // 为下一次循环增加 7 天
-    currentStart.setDate(currentStart.getDate() + 7);
-    count++;
+      const sessionDateObj = new Date(startDateObj.getTime());
+      sessionDateObj.setDate(sessionDateObj.getDate() + daysToAdd);
+
+      // 如果按日期结束，检查这一节课是否超期
+      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate && sessionDateObj > targetEndDate) {
+          continue; 
+      }
+
+      // 格式化为 YYYY-MM-DD，防止跨时区导致日期漂移
+      const localDateStr = `${sessionDateObj.getFullYear()}-${String(sessionDateObj.getMonth()+1).padStart(2,'0')}-${String(sessionDateObj.getDate()).padStart(2,'0')}`;
+      const startDateTime = fromZonedTime(`${localDateStr} ${session.time}`, timeZone);
+      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+      bookingsToInsert.push({
+        student_id: studentId,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        duration: duration,
+        location: location,
+        business_unit_id: businessId,
+        status: 'confirmed',
+        subject: subject || null,
+        teacher: teacher || null,
+        notes: notes || null
+      });
+    }
+
+    // 检查整周是否已经超过结束日期
+    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate) {
+      const endOfWeek = new Date(startDateObj.getTime());
+      endOfWeek.setDate(endOfWeek.getDate() + (weeksProcessed * 7) + 6);
+      if (endOfWeek > targetEndDate) break;
+    }
+
+    weeksProcessed++;
   }
 
   const { error } = await supabase.from("bookings").insert(bookingsToInsert);
@@ -73,7 +109,7 @@ export async function createBooking(prevState: any, formData: FormData) {
   return { success: true };
 }
 
-// 2. 更新预约 (保持不变)
+// 2. 更新预约
 export async function updateBooking(id: string, data: { startTime: string, duration: number, location: string }) {
   const supabase = await createClient();
   const startDate = new Date(data.startTime);
@@ -91,7 +127,7 @@ export async function updateBooking(id: string, data: { startTime: string, durat
   return { success: true };
 }
 
-// 3. 完成预约 (保持不变)
+// 3. 完成预约
 export async function completeBooking(id: string, studentId: string, duration: number) {
   const supabase = await createClient();
   const { error: bookingError } = await supabase.from("bookings").update({ status: 'completed' }).eq("id", id);
@@ -108,7 +144,7 @@ export async function completeBooking(id: string, studentId: string, duration: n
   return { success: true };
 }
 
-// 4. 取消预约 (保持不变)
+// 4. 取消预约
 export async function cancelBooking(id: string) {
   const supabase = await createClient();
   const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
@@ -130,7 +166,7 @@ export async function cancelBooking(id: string) {
   return { success: true };
 }
 
-// 5. 删除预约 (保持不变)
+// 5. 删除预约
 export async function deleteBooking(id: string) {
   const supabase = await createClient();
   const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
@@ -150,7 +186,7 @@ export async function deleteBooking(id: string) {
   return { success: true };
 }
 
-// 6. 驾校极速排课 - ✅ 同步升级循环排课
+// 6. 驾校极速排课 - ✅ 同样升级了高级循环引擎
 export async function quickCreateDrivingBooking(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -178,7 +214,7 @@ export async function quickCreateDrivingBooking(formData: FormData) {
     plateNumber: formData.get("plateNumber") as string,
   };
 
-  if (!identifier || !dateStr || !timeStr) return { error: "信息不完整" };
+  if (!identifier || !dateStr) return { error: "信息不完整" };
 
   let studentId = "";
   const { data: existingStudent } = await supabase
@@ -210,40 +246,71 @@ export async function quickCreateDrivingBooking(formData: FormData) {
   }
 
   const timeZone = 'Pacific/Auckland';
-  const bookingsToInsert = [];
-  
-  let currentStart = fromZonedTime(`${dateStr} ${timeStr}`, timeZone);
-  let count = 0;
-  const maxLoops = 52; 
-  
+  let schedule: { dayOfWeek: string, time: string }[] = [];
+  if (repeatMode === 'weekly') {
+      const wsStr = formData.get("weeklySchedule") as string;
+      if (wsStr) {
+          try { schedule = JSON.parse(wsStr); } catch(e) {}
+      }
+  } else {
+      schedule = [{ dayOfWeek: fromZonedTime(`${dateStr} 00:00:00`, timeZone).getDay().toString(), time: timeStr }];
+  }
+
+  const startDateObj = fromZonedTime(`${dateStr} 00:00:00`, timeZone);
+  const startDayOfWeek = startDateObj.getDay(); 
+
   let targetEndDate: Date | null = null;
   if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
     targetEndDate = fromZonedTime(`${endDateStr} 23:59:59`, timeZone);
   }
 
-  while (count < maxLoops) {
-    if (repeatMode === 'none' && count >= 1) break;
-    if (repeatMode === 'weekly' && endMode === 'count' && count >= repeatCount) break;
-    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate && currentStart > targetEndDate) break;
+  const bookingsToInsert = [];
+  let weeksProcessed = 0;
+  const maxLoops = 52; 
 
-    const endDateTime = new Date(currentStart.getTime() + duration * 60 * 60 * 1000);
+  while (weeksProcessed < maxLoops) {
+    if (repeatMode === 'none' && weeksProcessed >= 1) break;
+    if (repeatMode === 'weekly' && endMode === 'count' && weeksProcessed >= repeatCount) break;
 
-    bookingsToInsert.push({
-      student_id: studentId,
-      start_time: currentStart.toISOString(),
-      end_time: endDateTime.toISOString(),
-      duration: duration,
-      location: location,
-      business_unit_id: businessId,
-      status: 'confirmed',
-      actual_rate: actualRate,
-      subject: subject || null,
-      notes: notes || null,
-      metadata: metadata
-    });
-    
-    currentStart.setDate(currentStart.getDate() + 7);
-    count++;
+    for (const session of schedule) {
+      const dayDiff = Number(session.dayOfWeek) - startDayOfWeek;
+      const daysToAdd = (weeksProcessed * 7) + dayDiff;
+      
+      if (weeksProcessed === 0 && dayDiff < 0) continue;
+
+      const sessionDateObj = new Date(startDateObj.getTime());
+      sessionDateObj.setDate(sessionDateObj.getDate() + daysToAdd);
+
+      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate && sessionDateObj > targetEndDate) {
+          continue; 
+      }
+
+      const localDateStr = `${sessionDateObj.getFullYear()}-${String(sessionDateObj.getMonth()+1).padStart(2,'0')}-${String(sessionDateObj.getDate()).padStart(2,'0')}`;
+      const startDateTime = fromZonedTime(`${localDateStr} ${session.time}`, timeZone);
+      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+      bookingsToInsert.push({
+        student_id: studentId,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        duration: duration,
+        location: location,
+        business_unit_id: businessId,
+        status: 'confirmed',
+        actual_rate: actualRate,
+        subject: subject || null,
+        notes: notes || null,
+        metadata: metadata
+      });
+    }
+
+    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDate) {
+      const endOfWeek = new Date(startDateObj.getTime());
+      endOfWeek.setDate(endOfWeek.getDate() + (weeksProcessed * 7) + 6);
+      if (endOfWeek > targetEndDate) break;
+    }
+
+    weeksProcessed++;
   }
 
   const { error } = await supabase.from("bookings").insert(bookingsToInsert);
