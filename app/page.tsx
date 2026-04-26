@@ -14,18 +14,17 @@ import {
   Loader2, MapPin, 
   Wallet, AlertCircle, Sun, Moon, Calendar as CalendarIcon, 
   Home as HomeIcon, ArrowUpRight, Clock, User, BookOpen,
-  Users, FileBarChart, LogOut, ChevronDown, Check, Building2
+  Users, FileBarChart, LogOut, Check, Building2
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { format, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
-// 简单的下拉菜单组件 (避免依赖 shadcn/ui 组件库文件缺失)
+// 简单的下拉菜单组件
 function MobileUserMenu({ user, currentLabel, businesses, onSwitch, onSignOut }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 点击外部关闭
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -99,7 +98,6 @@ export default function Home() {
     async function initData() {
       const supabase = createClient();
       
-      // 1. 获取用户信息
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
@@ -109,7 +107,6 @@ export default function Home() {
         });
       }
 
-      // 2. 获取业务列表
       const { data: units } = await supabase.from('business_units').select('id, name').order('name');
       if (units && units.length > 0) {
         setBusinessList(units);
@@ -121,7 +118,6 @@ export default function Home() {
         ]);
       }
 
-      // 3. 获取仪表盘数据
       if (currentBusinessId) {
         setLoading(true);
         try {
@@ -152,12 +148,29 @@ export default function Home() {
   const greeting = hour < 12 ? "早安" : hour < 18 ? "下午好" : "晚上好";
   const GreetingIcon = hour < 18 ? Sun : Moon;
 
-  // ✅ 核心修改：只过滤状态为 'confirmed' 的课程，不再用当前时间直接剔除过去时间的课程
-  const futureBookings = stats.calendarBookings
-    .filter((b: any) => b.status === 'confirmed')
+  // ==========================================
+  // 🧠 核心：智能计算待办课程与待缴费状态
+  // ==========================================
+  const rawFutureBookings = stats.calendarBookings
+    .filter((b: any) => b.status === 'confirmed') // 只要没点完成，全部算待办
     .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-  // 底部导航项
+  const studentUsage: Record<string, number> = {};
+  const futureBookings = rawFutureBookings.map((b: any) => {
+    const sid = b.student_id;
+    if (!studentUsage[sid]) studentUsage[sid] = 0;
+    
+    const balance = Number(b.student?.balance || 0);
+    const newUsage = studentUsage[sid] + Number(b.duration);
+    
+    // 如果已经消耗的课时加上这节课的课时，超出了余额，这节课就是“待缴费”
+    const isUnpaid = newUsage > balance;
+    
+    studentUsage[sid] = newUsage;
+    
+    return { ...b, isUnpaid };
+  });
+
   const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
     <Link href={href} className={`flex flex-col items-center justify-center gap-1 flex-1 active:scale-95 transition-transform py-2 group ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
       <div className={`h-6 w-6 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}>
@@ -176,7 +189,6 @@ export default function Home() {
         {/* --- PART 1: HEADER & CARDS --- */}
         <div className="shrink-0 z-20 bg-slate-50 md:bg-transparent pb-2 relative">
           
-          {/* Mobile Header (带头像菜单) */}
           <div className="md:hidden px-6 pt-12 pb-4 flex justify-between items-center bg-slate-50">
             <div>
               <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">
@@ -192,17 +204,12 @@ export default function Home() {
                 </Badge>
               </div>
             </div>
-            {/* 头像菜单 */}
             <MobileUserMenu 
-              user={userProfile} 
-              currentLabel={currentLabel} 
-              businesses={businessList} 
-              onSwitch={setBusinessId}
-              onSignOut={handleSignOut}
+              user={userProfile} currentLabel={currentLabel} businesses={businessList} 
+              onSwitch={setBusinessId} onSignOut={handleSignOut}
             />
           </div>
 
-          {/* Desktop Header */}
           <div className="hidden md:flex max-w-7xl mx-auto px-6 pt-8 pb-6 justify-between items-end">
              <div>
                <p className="text-slate-500 text-sm font-bold mb-1 flex items-center gap-2">
@@ -215,11 +222,9 @@ export default function Home() {
              {userProfile?.avatar_url && <img src={userProfile.avatar_url} className="h-12 w-12 rounded-full border-2 border-white shadow-sm" />}
           </div>
 
-          {/* Cards Container */}
           <div className="relative w-full max-w-7xl mx-auto">
             <div ref={scrollRef} onScroll={handleScroll} className="md:hidden flex snap-x snap-mandatory overflow-x-auto gap-0 no-scrollbar px-5 py-2">
               
-              {/* Card 1: Net Cash */}
               <Link href="/finance" className="snap-center w-full min-w-full px-1 block active:scale-[0.98] transition-transform">
                 <div className="h-44 rounded-3xl bg-indigo-600 p-6 text-white shadow-xl shadow-indigo-200 relative overflow-hidden flex flex-col z-0">
                    <div className="z-10 relative">
@@ -244,7 +249,6 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Card 2: Realized */}
               <Link href="/bookings" className="snap-center w-full min-w-full px-1 block active:scale-[0.98] transition-transform">
                 <div className="h-44 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm relative overflow-hidden flex flex-col justify-between">
                    <div className="absolute right-[-15px] top-[-15px] opacity-[0.07] pointer-events-none"><TrendingUp className="h-32 w-32 text-indigo-900" /></div>
@@ -263,7 +267,6 @@ export default function Home() {
                 </div>
               </Link>
 
-              {/* Card 3: Pool */}
               <Link href="/students" className="snap-center w-full min-w-full px-1 block active:scale-[0.98] transition-transform">
                 <div className="h-44 rounded-3xl bg-slate-900 p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
                    <div className="absolute right-[-10px] bottom-[-10px] opacity-10 pointer-events-none"><PiggyBank className="h-32 w-32" /></div>
@@ -287,7 +290,6 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Desktop Grid */}
             <div className="hidden md:grid grid-cols-3 gap-6 px-6">
                <Link href="/finance" className="block hover:scale-[1.02] transition-transform relative group">
                   <div className="h-48 rounded-3xl bg-indigo-600 p-6 text-white shadow-lg relative overflow-hidden">
@@ -316,7 +318,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- PART 2: LIST AREA (Auto-Expand) --- */}
+        {/* --- PART 2: LIST AREA --- */}
         <div className="flex-1 px-5 pt-0 pb-24 md:pb-6 md:px-6 max-w-7xl mx-auto w-full md:grid md:grid-cols-3 md:gap-8 overflow-y-auto md:overflow-visible">
           
           <div className="md:col-span-2 flex flex-col">
@@ -344,7 +346,7 @@ export default function Home() {
                      
                      return (
                        <Link href="/bookings" key={b.id} className="relative z-10 flex gap-4 group active:scale-[0.98] transition-transform duration-200">
-                          {/* Date Bubble */}
+                          
                           <div className="flex flex-col items-center gap-1 shrink-0 w-14 pt-1">
                              <div className={`h-14 w-14 rounded-2xl flex flex-col items-center justify-center text-xs font-bold shadow-sm z-20 border-[3px] border-slate-50 ${isToday ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600'}`}>
                                <span className="text-[10px] leading-tight opacity-80">{dateStr}</span>
@@ -352,7 +354,6 @@ export default function Home() {
                              </div>
                           </div>
 
-                          {/* Info Card */}
                           <div className="flex-1 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors">
                                <div className="flex justify-between items-start mb-2">
                                   <div className="flex items-center gap-2">
@@ -362,6 +363,14 @@ export default function Home() {
                                       </Badge>
                                     )}
                                     <h4 className="font-bold text-sm text-slate-900">{student.name}</h4>
+                                    
+                                    {/* ✅ 待缴费红帽子标签 */}
+                                    {b.isUnpaid && (
+                                      <Badge variant="destructive" className="bg-rose-100 text-rose-600 border-none px-1.5 py-0 h-5 text-[10px] ml-1 shadow-none">
+                                        待缴费
+                                      </Badge>
+                                    )}
+
                                   </div>
                                   <div className="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
                                     <Clock className="h-3 w-3" /> {b.duration}h
@@ -392,7 +401,6 @@ export default function Home() {
              </div>
           </div>
 
-          {/* Desktop Sidebar */}
           <div className="hidden md:block space-y-6 pt-16">
              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-900 mb-4">快捷操作</h3>
@@ -425,23 +433,14 @@ export default function Home() {
         {/* --- PART 3: MOBILE DOCK --- */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 pb-safe pt-1 px-6 z-50">
           <div className="flex justify-between items-center">
-            {/* 首页 */}
             <TabItem href="/" icon={HomeIcon} label="首页" isActive={true} />
-            
-            {/* 学生 */}
             <TabItem href="/students" icon={Users} label="学生" isActive={false} />
-            
-            {/* 记一笔 (FAB) */}
             <Link href="/finance/add" className="active:scale-90 transition-transform -mt-8">
                <div className="h-14 w-14 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-400/50 border-4 border-slate-50">
                  <PenLine className="h-6 w-6" />
                </div>
             </Link>
-            
-            {/* 排课 */}
             <TabItem href="/bookings" icon={CalendarIcon} label="排课" isActive={false} />
-            
-            {/* 报表 */}
             <TabItem href="/finance" icon={FileBarChart} label="报表" isActive={false} />
           </div>
         </div>
