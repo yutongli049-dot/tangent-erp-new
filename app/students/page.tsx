@@ -18,15 +18,16 @@ const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
 export default async function StudentsPage() {
   const supabase = await createClient();
 
-  // ✅ 核心修改：联表查询 bookings
-  // 我们需要查出每个学生 status='confirmed' 的预约，只取 duration 字段即可
+  // ✅ 核心修改：联表查询 bookings 时，带上 start_time 字段
+  // 这样前端的 student-list 才能计算该学员在过去 30 天内是否排过课
   const { data: students } = await supabase
     .from("students")
     .select(`
       *,
       bookings (
         duration,
-        status
+        status,
+        start_time
       )
     `)
     .order("created_at", { ascending: false });
@@ -56,12 +57,12 @@ export default async function StudentsPage() {
           </Link>
         </div>
 
-        {/* The List */}
+        {/* 智能列表：将带 start_time 的数据传给子组件进行沉睡名单过滤 */}
         <StudentList students={students || []} />
 
       </main>
 
-      {/* Mobile Dock */}
+      {/* Mobile Bottom Dock */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 pb-safe pt-1 px-6 z-50">
         <div className="flex justify-between items-center">
           <TabItem href="/" icon={HomeIcon} label="首页" isActive={false} />
