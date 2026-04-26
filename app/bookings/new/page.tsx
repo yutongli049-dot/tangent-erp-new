@@ -10,7 +10,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // ✅ 引入 Textarea
+import { Textarea } from "@/components/ui/textarea"; 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Loader2, MapPin, Car, DollarSign } from "lucide-react";
@@ -67,7 +67,7 @@ export default function NewBookingPage() {
 }
 
 // ==========================================
-// 🚗 驾校专属：极速排课表单 (Quick Book Form)
+// 🚗 驾校专属：极速排课表单
 // ==========================================
 function DrivingBookingForm({ businessId, router }: { businessId: string, router: any }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -78,9 +78,9 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [duration, setDuration] = useState("1");
   const [location, setLocation] = useState("");
   
-  // ✅ 新增字段
   const [subject, setSubject] = useState("限制性 (Restricted)"); 
   const [notes, setNotes] = useState("");
+  const [recurrenceWeeks, setRecurrenceWeeks] = useState("1"); // ✅ 新增：循环周数
 
   const [useInstructorCar, setUseInstructorCar] = useState(true);
   const [actualRate, setActualRate] = useState("85"); 
@@ -109,8 +109,9 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     formData.append("useInstructorCar", String(useInstructorCar));
     formData.append("needPickup", String(needPickup));
     
-    // ✅ 提交新增字段
     formData.append("subject", subject);
+    formData.append("recurrenceWeeks", recurrenceWeeks); // ✅ 提交循环周数
+    
     if (notes) formData.append("notes", notes);
     if (pickupAddress) formData.append("pickupAddress", pickupAddress);
     if (plateNumber) formData.append("plateNumber", plateNumber);
@@ -120,7 +121,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
     if (result && result.error) toast.error(result.error);
     else {
-      toast.success("排课成功，学员已自动建档！");
+      toast.success(recurrenceWeeks === "1" ? "排课成功！" : `已成功批量排课 ${recurrenceWeeks} 节！`);
       router.push("/bookings"); 
     }
   };
@@ -138,11 +139,9 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
             className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg" 
             autoFocus
           />
-          <p className="text-[10px] text-slate-400 pl-1">💡 系统会自动查找，找不到将直接新建档案。</p>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
-           {/* ✅ 新增：课程阶段选择 */}
            <div className="space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">课程类型 / 驾照阶段 *</Label>
               <Select value={subject} onValueChange={setSubject}>
@@ -169,18 +168,40 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
               </Select>
            </div>
            
-           <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2 col-span-1">
-                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">日期</Label>
+           {/* ✅ 优化了时间的布局，将单次/循环整合在了一起 */}
+           <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Date)</Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" />
               </div>
-              <div className="space-y-2 col-span-1">
-                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间</Label>
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间 (Time)</Label>
                 <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl" />
               </div>
-              <div className="space-y-2 col-span-1">
-                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长(h)</Label>
-                <Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl" />
+              <div className="space-y-2">
+                <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长 (Hours)</Label>
+                <div className="relative">
+                  <Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" />
+                  <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-indigo-500 font-bold uppercase pl-1 flex items-center gap-1">
+                  循环排课 (Repeat)
+                </Label>
+                <Select value={recurrenceWeeks} onValueChange={setRecurrenceWeeks}>
+                  <SelectTrigger className={`h-12 rounded-xl ${recurrenceWeeks !== "1" ? 'border-indigo-300 bg-indigo-50 text-indigo-700 font-bold' : 'border-slate-200 bg-white font-medium'}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">单次 (No repeat)</SelectItem>
+                    <SelectItem value="2">连续 2 周 (Weekly)</SelectItem>
+                    <SelectItem value="3">连续 3 周</SelectItem>
+                    <SelectItem value="4">连续 4 周</SelectItem>
+                    <SelectItem value="5">连续 5 周</SelectItem>
+                    <SelectItem value="10">连续 10 周 (学期)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
            </div>
         </div>
@@ -228,11 +249,10 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
            </div>
         </div>
 
-        {/* ✅ 新增：备注信息 */}
         <div className="space-y-2 pt-2">
           <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">备注信息 (Notes)</Label>
           <Textarea 
-            placeholder="例如：学员之前挂过一次，需要重点练习平行泊车..." 
+            placeholder="选填..." 
             value={notes} 
             onChange={(e) => setNotes(e.target.value)} 
             className="rounded-xl border-slate-200 bg-white min-h-[80px]" 
@@ -240,7 +260,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
         </div>
 
         <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-base font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]">
-          {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> 提交中...</> : "一键排课"}
+          {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> 提交中...</> : (recurrenceWeeks === "1" ? "一键排课" : `批量生成 ${recurrenceWeeks} 节课`)}
         </Button>
       </form>
     </div>
@@ -262,9 +282,8 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
   const [location, setLocation] = useState("线上");
   const [subject, setSubject] = useState("");
   const [teacher, setTeacher] = useState("Henry");
-  
-  // ✅ 教培的备注
   const [notes, setNotes] = useState("");
+  const [recurrenceWeeks, setRecurrenceWeeks] = useState("1"); // ✅ 新增：循环周数
 
   useEffect(() => {
     async function fetchStudents() {
@@ -297,13 +316,17 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
     formData.append("businessId", businessId);
     formData.append("subject", subject);
     formData.append("teacher", teacher);
-    if (notes) formData.append("notes", notes); // ✅ 提交教培备注
+    formData.append("recurrenceWeeks", recurrenceWeeks); // ✅ 提交循环周数
+    if (notes) formData.append("notes", notes); 
 
     const result = await createBooking(null, formData);
     setIsLoading(false);
 
     if (result && result.error) toast.error(result.error);
-    else { toast.success("课程预约已创建"); router.push("/bookings"); }
+    else { 
+       toast.success(recurrenceWeeks === "1" ? "课程预约已创建" : `已成功批量排课 ${recurrenceWeeks} 节`); 
+       router.push("/bookings"); 
+    }
   };
 
   return (
@@ -348,29 +371,54 @@ function TutoringBookingForm({ businessId, router }: { businessId: string, route
             </Select>
           </div>
         </div>
+
+        {/* ✅ 教培的日期/时间网格，加入循环排课 */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">日期</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
-          <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间</Label><Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl" /></div>
+          <div className="space-y-2">
+            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Date)</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时间 (Time)</Label>
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-12 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长 (Hours)</Label>
+            <div className="relative">
+              <Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" />
+              <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-indigo-500 font-bold uppercase pl-1 flex items-center gap-1">循环排课 (Repeat)</Label>
+            <Select value={recurrenceWeeks} onValueChange={setRecurrenceWeeks}>
+              <SelectTrigger className={`h-12 rounded-xl ${recurrenceWeeks !== "1" ? 'border-indigo-300 bg-indigo-50 text-indigo-700 font-bold' : 'border-slate-200 bg-white font-medium'}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">单次 (No repeat)</SelectItem>
+                <SelectItem value="2">连续 2 周 (Weekly)</SelectItem>
+                <SelectItem value="3">连续 3 周</SelectItem>
+                <SelectItem value="4">连续 4 周</SelectItem>
+                <SelectItem value="5">连续 5 周</SelectItem>
+                <SelectItem value="10">连续 10 周 (学期)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">时长</Label>
-            <div className="relative"><Input type="number" step="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div>
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">地点</Label>
+
+        <div className="space-y-2">
+            <Label className="text-xs text-slate-400 font-bold uppercase pl-1">地点 (Location)</Label>
             <div className="relative"><Input value={location} onChange={(e) => setLocation(e.target.value)} className="h-12 rounded-xl" /><MapPin className="absolute right-3 top-3.5 h-5 w-5 text-slate-400 pointer-events-none" /></div>
-          </div>
         </div>
         
-        {/* ✅ 教培的备注 */}
         <div className="space-y-2">
           <Label className="text-xs text-slate-400 font-bold uppercase pl-1">备注 (Notes)</Label>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl border-slate-200 bg-white" placeholder="选填..." />
         </div>
 
         <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-base font-bold shadow-lg shadow-indigo-200 mt-4">
-          {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> 创建中...</> : "确认预约"}
+          {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> 创建中...</> : (recurrenceWeeks === "1" ? "确认预约" : `批量生成 ${recurrenceWeeks} 节课`)}
         </Button>
       </form>
     </div>

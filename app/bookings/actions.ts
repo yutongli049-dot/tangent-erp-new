@@ -2,9 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { fromZonedTime } from "date-fns-tz"; // ✅ 引入时区库
+import { fromZonedTime } from "date-fns-tz"; 
 
-// 1. 创建预约 (已修复时区 + 增加科目/老师)
+// 1. 创建预约 (教培) - ✅ 支持循环排课
 export async function createBooking(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -16,32 +16,42 @@ export async function createBooking(prevState: any, formData: FormData) {
   const duration = Number(formData.get("duration"));
   const location = formData.get("location") as string;
   const businessId = formData.get("businessId") as string;
-  
-  // ✅ 新增字段
   const subject = formData.get("subject") as string;
   const teacher = formData.get("teacher") as string;
+  const notes = formData.get("notes") as string;
+  
+  // ✅ 获取循环周数（默认为 1，即单次）
+  const recurrenceWeeks = Number(formData.get("recurrenceWeeks")) || 1;
 
   if (!studentId || !dateStr || !timeStr) return { error: "信息不完整" };
 
-  // ✅ 核心修复：强制使用新西兰时间解析
-  // 无论服务器在哪里，都把 "2026-02-11 16:00" 当作新西兰时间，转换为正确的 UTC
   const timeZone = 'Pacific/Auckland';
-  const startDateTime = fromZonedTime(`${dateStr} ${timeStr}`, timeZone);
-  
-  // 计算结束时间
-  const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+  const bookingsToInsert = [];
 
-  const { error } = await supabase.from("bookings").insert({
-    student_id: studentId,
-    start_time: startDateTime.toISOString(),
-    end_time: endDateTime.toISOString(),
-    duration: duration,
-    location: location,
-    business_unit_id: businessId,
-    status: 'confirmed',
-    subject: subject || null, // ✅ 存入科目
-    teacher: teacher || null  // ✅ 存入老师
-  });
+  // ✅ 循环生成多个日期的课程
+  for (let i = 0; i < recurrenceWeeks; i++) {
+    // 每次循环重新解析基准时间
+    const startDateTime = fromZonedTime(`${dateStr} ${timeStr}`, timeZone);
+    // 加上对应的天数 (i * 7天)
+    startDateTime.setDate(startDateTime.getDate() + (i * 7));
+    const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+    bookingsToInsert.push({
+      student_id: studentId,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      duration: duration,
+      location: location,
+      business_unit_id: businessId,
+      status: 'confirmed',
+      subject: subject || null,
+      teacher: teacher || null,
+      notes: notes || null
+    });
+  }
+
+  // 批量插入数据库
+  const { error } = await supabase.from("bookings").insert(bookingsToInsert);
 
   if (error) return { error: error.message };
   revalidatePath("/bookings");
@@ -51,7 +61,6 @@ export async function createBooking(prevState: any, formData: FormData) {
 // 2. 更新预约
 export async function updateBooking(id: string, data: { startTime: string, duration: number, location: string }) {
   const supabase = await createClient();
-  
   const startDate = new Date(data.startTime);
   const endDate = new Date(startDate.getTime() + data.duration * 60 * 60 * 1000);
 
@@ -70,15 +79,9 @@ export async function updateBooking(id: string, data: { startTime: string, durat
 // 3. 完成预约
 export async function completeBooking(id: string, studentId: string, duration: number) {
   const supabase = await createClient();
-
-  const { error: bookingError } = await supabase
-    .from("bookings")
-    .update({ status: 'completed' })
-    .eq("id", id);
-
+  const { error: bookingError } = await supabase.from("bookings").update({ status: 'completed' }).eq("id", id);
   if (bookingError) return { error: bookingError.message };
 
-  // 扣除余额
   const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
   if (student) {
     await supabase.from("students").update({ balance: Number(student.balance) - duration }).eq("id", studentId);
@@ -93,7 +96,6 @@ export async function completeBooking(id: string, studentId: string, duration: n
 // 4. 取消预约
 export async function cancelBooking(id: string) {
   const supabase = await createClient();
-
   const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
   if (!booking) return { error: "Booking not found" };
 
@@ -116,7 +118,6 @@ export async function cancelBooking(id: string) {
 // 5. 删除预约
 export async function deleteBooking(id: string) {
   const supabase = await createClient();
-
   const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
   if (booking && booking.status === 'completed' && booking.student_id) {
     const { data: student } = await supabase.from("students").select("balance").eq("id", booking.student_id).single();
@@ -134,7 +135,7 @@ export async function deleteBooking(id: string) {
   return { success: true };
 }
 
-// 6. 驾校极速排课 (合二为一)
+// 6. 驾校极速排课 - ✅ 支持循环排课
 export async function quickCreateDrivingBooking(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -147,10 +148,11 @@ export async function quickCreateDrivingBooking(formData: FormData) {
   const duration = Number(formData.get("duration"));
   const location = formData.get("location") as string;
   const actualRate = Number(formData.get("actualRate"));
-  
-  // ✅ 新增：接收科目和备注
   const subject = formData.get("subject") as string;
   const notes = formData.get("notes") as string;
+  
+  // ✅ 获取循环周数
+  const recurrenceWeeks = Number(formData.get("recurrenceWeeks")) || 1;
   
   const metadata = {
     useInstructorCar: formData.get("useInstructorCar") === "true",
@@ -190,26 +192,34 @@ export async function quickCreateDrivingBooking(formData: FormData) {
     studentId = newStudent.id;
   }
 
-  const { fromZonedTime } = require("date-fns-tz");
-  const startDateTime = fromZonedTime(`${dateStr} ${timeStr}`, 'Pacific/Auckland');
-  const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+  const timeZone = 'Pacific/Auckland';
+  const bookingsToInsert = [];
 
-  const { error } = await supabase.from("bookings").insert({
-    student_id: studentId,
-    start_time: startDateTime.toISOString(),
-    end_time: endDateTime.toISOString(),
-    duration: duration,
-    location: location,
-    business_unit_id: businessId,
-    status: 'confirmed',
-    actual_rate: actualRate,
-    subject: subject || null,  // ✅ 存入科目
-    notes: notes || null,      // ✅ 存入备注
-    metadata: metadata
-  });
+  // ✅ 批量生成记录
+  for (let i = 0; i < recurrenceWeeks; i++) {
+    const startDateTime = fromZonedTime(`${dateStr} ${timeStr}`, timeZone);
+    startDateTime.setDate(startDateTime.getDate() + (i * 7));
+    const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+
+    bookingsToInsert.push({
+      student_id: studentId,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      duration: duration,
+      location: location,
+      business_unit_id: businessId,
+      status: 'confirmed',
+      actual_rate: actualRate,
+      subject: subject || null,
+      notes: notes || null,
+      metadata: metadata
+    });
+  }
+
+  // 批量插入数据库
+  const { error } = await supabase.from("bookings").insert(bookingsToInsert);
 
   if (error) return { error: error.message };
-  
   revalidatePath("/bookings");
   revalidatePath("/students");
   return { success: true };
