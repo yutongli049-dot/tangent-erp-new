@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 const BUSINESS_UNITS = [
   { id: "cus", name: "CuS Academy (教培)", icon: Building2 },
-  { id: "sine", name: "Sine Studio (驾校)", icon: Car },
+  { id: "sine", name: "Sine Driving School (驾校)", icon: Car },
   { id: "tangent", name: "Tangent Group", icon: LayoutGrid },
 ];
 
