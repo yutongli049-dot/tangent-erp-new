@@ -2,9 +2,22 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { fromZonedTime } from "date-fns-tz"; 
 
-// 1. 创建预约 (教培) - ✅ 修复时区偏移导致的日期提前一天 Bug
+// 🌟 核心利器：动态获取新西兰当日的时区偏移量 (+12:00 或 +13:00)
+// 彻底免疫服务器的时区干扰
+function getNZOffset(dateStr: string) {
+   const d = new Date(`${dateStr}T12:00:00Z`); 
+   const formatter = new Intl.DateTimeFormat('en-US', {
+       timeZone: 'Pacific/Auckland',
+       timeZoneName: 'shortOffset'
+   });
+   const parts = formatter.formatToParts(d);
+   const tz = parts.find(p => p.type === 'timeZoneName')?.value;
+   if (tz && tz.includes('+13')) return '+13:00';
+   return '+12:00';
+}
+
+// 1. 创建预约 (教培)
 export async function createBooking(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -27,18 +40,16 @@ export async function createBooking(prevState: any, formData: FormData) {
 
   if (!studentId || !dateStr) return { error: "信息不完整" };
 
-  const timeZone = 'Pacific/Auckland';
-  
-  // 🧠 核心修复：手动解析年月日，并在中午12点进行日期推算，免疫一切服务器时区干扰
+  // 🧠 纯数学推算：只使用 UTC 确保计算不出差错
   const [year, month, day] = dateStr.split('-').map(Number);
-  const startDateObj = new Date(year, month - 1, day, 12, 0, 0); 
-  const startDayOfWeek = startDateObj.getDay(); 
+  const baseDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); 
+  const startDayOfWeek = baseDate.getUTCDay(); 
 
   let schedule: { dayOfWeek: string, time: string }[] = [];
   if (repeatMode === 'weekly') {
       const wsStr = formData.get("weeklySchedule") as string;
       if (wsStr) {
-          try { schedule = JSON.parse(wsStr); } catch(e) { console.error(e); }
+          try { schedule = JSON.parse(wsStr); } catch(e) {}
       }
   } else {
       schedule = [{ dayOfWeek: startDayOfWeek.toString(), time: timeStr }];
@@ -47,7 +58,7 @@ export async function createBooking(prevState: any, formData: FormData) {
   let targetEndDateObj: Date | null = null;
   if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
     const [ey, em, ed] = endDateStr.split('-').map(Number);
-    targetEndDateObj = new Date(ey, em - 1, ed, 23, 59, 59);
+    targetEndDateObj = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59));
   }
 
   const bookingsToInsert = [];
@@ -64,24 +75,26 @@ export async function createBooking(prevState: any, formData: FormData) {
       
       if (weeksProcessed === 0 && dayDiff < 0) continue;
 
-      const sessionDateObj = new Date(startDateObj.getTime());
-      sessionDateObj.setDate(sessionDateObj.getDate() + daysToAdd);
+      const sessionDate = new Date(baseDate.getTime());
+      sessionDate.setUTCDate(sessionDate.getUTCDate() + daysToAdd);
 
-      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDateObj > targetEndDateObj) {
+      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDate > targetEndDateObj) {
           continue; 
       }
 
-      // 重构回本地日期字符串 "YYYY-MM-DD"
-      const localDateStr = `${sessionDateObj.getFullYear()}-${String(sessionDateObj.getMonth()+1).padStart(2,'0')}-${String(sessionDateObj.getDate()).padStart(2,'0')}`;
+      // 生成安全的 YYYY-MM-DD
+      const localDateStr = `${sessionDate.getUTCFullYear()}-${String(sessionDate.getUTCMonth() + 1).padStart(2, '0')}-${String(sessionDate.getUTCDate()).padStart(2, '0')}`;
+      const offset = getNZOffset(localDateStr);
       
-      // ✅ 仅在入库的最后一步，将本地拼接的时间转换为新西兰 UTC 时间存入
-      const startDateTime = fromZonedTime(`${localDateStr} ${session.time}`, timeZone);
-      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+      // 🚀 组装绝对时间戳 (例如: 2026-05-03T10:00:00+12:00)
+      const startDateTimeStr = `${localDateStr}T${session.time}:00${offset}`;
+      const startDateObjParsed = new Date(startDateTimeStr);
+      const endDateTimeStr = new Date(startDateObjParsed.getTime() + duration * 60 * 60 * 1000).toISOString();
 
       bookingsToInsert.push({
         student_id: studentId,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: startDateTimeStr, // 直接丢给数据库解析
+        end_time: endDateTimeStr,
         duration: duration,
         location: location,
         business_unit_id: businessId,
@@ -93,8 +106,8 @@ export async function createBooking(prevState: any, formData: FormData) {
     }
 
     if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj) {
-      const endOfWeek = new Date(startDateObj.getTime());
-      endOfWeek.setDate(endOfWeek.getDate() + (weeksProcessed * 7) + 6);
+      const endOfWeek = new Date(baseDate.getTime());
+      endOfWeek.setUTCDate(endOfWeek.getUTCDate() + (weeksProcessed * 7) + 6);
       if (endOfWeek > targetEndDateObj) break;
     }
 
@@ -185,7 +198,7 @@ export async function deleteBooking(id: string) {
   return { success: true };
 }
 
-// 6. 驾校极速排课 - ✅ 同步修复时区 Bug
+// 6. 驾校极速排课 - ✅ 同步修复
 export async function quickCreateDrivingBooking(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -244,12 +257,10 @@ export async function quickCreateDrivingBooking(formData: FormData) {
     studentId = newStudent.id;
   }
 
-  const timeZone = 'Pacific/Auckland';
-  
-  // 🧠 核心修复
+  // 🧠 纯数学推算
   const [year, month, day] = dateStr.split('-').map(Number);
-  const startDateObj = new Date(year, month - 1, day, 12, 0, 0); 
-  const startDayOfWeek = startDateObj.getDay(); 
+  const baseDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); 
+  const startDayOfWeek = baseDate.getUTCDay(); 
 
   let schedule: { dayOfWeek: string, time: string }[] = [];
   if (repeatMode === 'weekly') {
@@ -264,7 +275,7 @@ export async function quickCreateDrivingBooking(formData: FormData) {
   let targetEndDateObj: Date | null = null;
   if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
     const [ey, em, ed] = endDateStr.split('-').map(Number);
-    targetEndDateObj = new Date(ey, em - 1, ed, 23, 59, 59);
+    targetEndDateObj = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59));
   }
 
   const bookingsToInsert = [];
@@ -281,21 +292,24 @@ export async function quickCreateDrivingBooking(formData: FormData) {
       
       if (weeksProcessed === 0 && dayDiff < 0) continue;
 
-      const sessionDateObj = new Date(startDateObj.getTime());
-      sessionDateObj.setDate(sessionDateObj.getDate() + daysToAdd);
+      const sessionDate = new Date(baseDate.getTime());
+      sessionDate.setUTCDate(sessionDate.getUTCDate() + daysToAdd);
 
-      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDateObj > targetEndDateObj) {
+      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDate > targetEndDateObj) {
           continue; 
       }
 
-      const localDateStr = `${sessionDateObj.getFullYear()}-${String(sessionDateObj.getMonth()+1).padStart(2,'0')}-${String(sessionDateObj.getDate()).padStart(2,'0')}`;
-      const startDateTime = fromZonedTime(`${localDateStr} ${session.time}`, timeZone);
-      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
+      const localDateStr = `${sessionDate.getUTCFullYear()}-${String(sessionDate.getUTCMonth() + 1).padStart(2, '0')}-${String(sessionDate.getUTCDate()).padStart(2, '0')}`;
+      const offset = getNZOffset(localDateStr);
+      
+      const startDateTimeStr = `${localDateStr}T${session.time}:00${offset}`;
+      const startDateObjParsed = new Date(startDateTimeStr);
+      const endDateTimeStr = new Date(startDateObjParsed.getTime() + duration * 60 * 60 * 1000).toISOString();
 
       bookingsToInsert.push({
         student_id: studentId,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: startDateTimeStr,
+        end_time: endDateTimeStr,
         duration: duration,
         location: location,
         business_unit_id: businessId,
@@ -308,8 +322,8 @@ export async function quickCreateDrivingBooking(formData: FormData) {
     }
 
     if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj) {
-      const endOfWeek = new Date(startDateObj.getTime());
-      endOfWeek.setDate(endOfWeek.getDate() + (weeksProcessed * 7) + 6);
+      const endOfWeek = new Date(baseDate.getTime());
+      endOfWeek.setUTCDate(endOfWeek.getUTCDate() + (weeksProcessed * 7) + 6);
       if (endOfWeek > targetEndDateObj) break;
     }
 
