@@ -156,8 +156,10 @@ export function StudentList({ students }: { students: any[] }) {
     return list.map((student) => {
       const totalBalance = Number(student.balance);
       const bookings = student.bookings || [];
-      const scheduledHours = bookings.filter((b: any) => b.status === 'confirmed').reduce((sum: number, b: any) => sum + Number(b.duration), 0);
-      const unscheduledHours = totalBalance - scheduledHours;
+      const scheduledHours = bookings
+        .filter((b: any) => b.status === 'confirmed')
+        .reduce((sum: number, b: any) => sum + Number(b.duration), 0);
+      const unscheduledHours = Number((totalBalance - scheduledHours).toFixed(1));
 
       return (
         <div key={student.id} className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 hover:shadow-md transition-all gap-4">
@@ -301,9 +303,9 @@ export function StudentList({ students }: { students: any[] }) {
           <DialogHeader className="text-center"><DialogTitle className="text-xl">课时充值</DialogTitle><p className="text-xs text-slate-500">为 {topUpTarget?.name} 增加课时</p></DialogHeader>
           <div className="py-6 flex flex-col items-center gap-4">
              <div className="flex items-center justify-center gap-2">
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setTopUpAmount(String(Math.max(1, Number(topUpAmount) - 1)))}>-</Button>
+                <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setTopUpAmount(String(Math.max(0.5, Number((Number(topUpAmount) - 0.5).toFixed(1)))))}>-</Button>
                 <div className="text-3xl font-black w-24 text-center tabular-nums">{topUpAmount}</div>
-                <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setTopUpAmount(String(Number(topUpAmount) + 1))}>+</Button>
+                <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setTopUpAmount(String(Number((Number(topUpAmount) + 0.5).toFixed(1))))}>+</Button>
              </div>
              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">HOURS</p>
              <div className="grid grid-cols-3 gap-2 w-full mt-2">

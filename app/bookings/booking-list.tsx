@@ -12,9 +12,18 @@ import {
   MapPin, Loader2, Trash2, Pencil, Check, 
   Calendar as CalendarIcon, BookOpen, FileText // ✅ 引入 FileText 图标
 } from "lucide-react";
-import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { isPast } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { InvoiceModal } from "@/components/InvoiceModal"; // ✅ 引入发票组件
+import { InvoiceModal } from "@/components/InvoiceModal";
+import { DualTimezoneTime, DualTimezonePreview } from "@/components/DualTimezoneTime";
+import {
+  isTodayInNZ,
+  isTomorrowInNZ,
+  utcToNzDateKey,
+  utcToNzDateStr,
+  utcToNzTimeStr,
+  formatDateLabelInNZ,
+} from "@/lib/timezone";
 
 type Booking = {
   id: string;
@@ -61,7 +70,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
   const groupedBookings: Record<string, Booking[]> = {};
   displayList.forEach(b => {
-    const dateKey = format(new Date(b.start_time), 'yyyy-MM-dd');
+    const dateKey = utcToNzDateKey(b.start_time);
     if (!groupedBookings[dateKey]) groupedBookings[dateKey] = [];
     groupedBookings[dateKey].push(b);
   });
@@ -82,21 +91,20 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     setLoadingId(id); await deleteBooking(id); setLoadingId(null);
   };
   const openEdit = (b: Booking) => {
-    const d = new Date(b.start_time);
     setEditingBooking(b);
-    setEditDate(format(d, "yyyy-MM-dd"));
-    setEditTime(format(d, "HH:mm"));
+    setEditDate(utcToNzDateStr(b.start_time));
+    setEditTime(utcToNzTimeStr(b.start_time));
     setEditDuration(b.duration.toString());
     setEditLocation(b.location || "");
   };
   const saveEdit = async () => {
     if (!editingBooking) return;
     setLoadingId(editingBooking.id);
-    const localDateTime = new Date(`${editDate}T${editTime}`);
     await updateBooking(editingBooking.id, {
-      startTime: localDateTime.toISOString(),
+      date: editDate,
+      time: editTime,
       duration: Number(editDuration),
-      location: editLocation
+      location: editLocation,
     });
     setEditingBooking(null);
     setLoadingId(null);
@@ -147,11 +155,11 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
         </div>
       ) : (
         Object.entries(groupedBookings).map(([dateKey, items]) => {
-          const date = new Date(dateKey);
-          const isDateToday = isToday(date);
-          const isDateTomorrow = isTomorrow(date);
-          
-          let dateLabel = format(date, "M月d日 EEEE", { locale: zhCN });
+          const sampleUtc = items[0].start_time;
+          const isDateToday = isTodayInNZ(sampleUtc);
+          const isDateTomorrow = isTomorrowInNZ(sampleUtc);
+
+          let dateLabel = formatDateLabelInNZ(sampleUtc, zhCN);
           if (isDateToday) dateLabel = "今天 (Today)";
           if (isDateTomorrow) dateLabel = "明天 (Tomorrow)";
 
@@ -166,8 +174,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
               <div className="space-y-3 pl-2">
                 {items.map(b => {
-                   const startTime = new Date(b.start_time);
-                   const isOverdue = activeTab === 'upcoming' && isPast(startTime) && !isToday(startTime);
+                   const isOverdue = activeTab === 'upcoming' && isPast(new Date(b.start_time)) && !isTodayInNZ(b.start_time);
                    
                    return (
                      <div key={b.id} className="relative pl-4 border-l-2 border-slate-200 hover:border-indigo-300 transition-colors py-1 group">
@@ -185,9 +192,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                                  </div>
                               </div>
                               <div className="text-right">
-                                 <div className={`text-sm font-bold font-mono ${isOverdue ? 'text-rose-500' : 'text-slate-700'}`}>
-                                   {format(startTime, "HH:mm")}
-                                 </div>
+                                 <DualTimezoneTime utcIso={b.start_time} compact className={isOverdue ? "text-rose-500" : undefined} />
                                  <div className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded mt-1 inline-block">
                                    {b.duration}h
                                  </div>
@@ -254,12 +259,17 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
               <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="col-span-3 h-9" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right text-xs text-slate-500">时间</Label>
-              <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="col-span-3 h-9" />
+              <Label className="text-right text-xs text-slate-500">时间 (NZT)</Label>
+              <div className="col-span-3 space-y-1">
+                <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-9" />
+                {editDate && editTime && (
+                  <DualTimezonePreview date={editDate} time={editTime} className="mt-1" />
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-xs text-slate-500">时长</Label>
-              <Input type="number" step="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="col-span-3 h-9" />
+              <Input type="number" step="0.5" min="0.5" value={editDuration} onChange={(e) => setEditDuration(e.target.value)} className="col-span-3 h-9" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right text-xs text-slate-500">地点</Label>

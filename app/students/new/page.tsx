@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createStudent } from "../actions"; 
 import { useBusiness } from "@/contexts/BusinessContext";
+import { createClient } from "@/lib/supabase/client";
 import { Navbar } from "@/components/Navbar"; 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreatableCombobox } from "@/components/CreatableCombobox";
+import { fetchFormSuggestions } from "@/lib/form-suggestions";
 import { 
   Loader2, ArrowLeft, Wallet, GraduationCap, User, BookOpen, 
   Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, Car
@@ -30,11 +33,27 @@ const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
 export default function NewStudentPage() {
   const { currentBusinessId } = useBusiness();
   const router = useRouter();
+  const supabase = createClient();
   const [loading, setLoading] = useState(false);
 
   const [hourlyRate, setHourlyRate] = useState("70");
   const [balance, setBalance] = useState("0");
   const [level, setLevel] = useState("Year 11");
+  const [subject, setSubject] = useState("");
+  const [teacher, setTeacher] = useState("");
+  const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
+  const [teacherOptions, setTeacherOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadSuggestions() {
+      const { subjects, teachers } = await fetchFormSuggestions(supabase, currentBusinessId);
+      setSubjectOptions(subjects);
+      setTeacherOptions(teachers);
+    }
+    if (!currentBusinessId.includes("sine")) {
+      loadSuggestions();
+    }
+  }, [currentBusinessId, supabase]);
 
   // ==========================================
   // 🚗 拦截器：驾校模式下不需要此页面，直接引导去排课
@@ -69,6 +88,8 @@ export default function NewStudentPage() {
     const formData = new FormData(e.currentTarget);
     formData.append("businessId", currentBusinessId);
     formData.append("level", level);
+    formData.set("subject", subject);
+    formData.set("teacher", teacher);
 
     const res = await createStudent(null, formData);
     setLoading(false);
@@ -186,11 +207,25 @@ export default function NewStudentPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-slate-500">学习科目 (Subject)</Label>
-                    <Input name="subject" placeholder="例如: NCEA L1 Math" className="h-11 rounded-xl bg-slate-50 border-slate-200" />
+                    <CreatableCombobox
+                      name="subject"
+                      value={subject}
+                      onChange={setSubject}
+                      options={subjectOptions}
+                      placeholder="例如: NCEA L1 Math"
+                      inputClassName="h-11 rounded-xl bg-slate-50 border-slate-200"
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-xs text-slate-500">负责老师 (Teacher)</Label>
-                    <Input name="teacher" placeholder="例如: Henry Liu" className="h-11 rounded-xl bg-slate-50 border-slate-200" />
+                    <CreatableCombobox
+                      name="teacher"
+                      value={teacher}
+                      onChange={setTeacher}
+                      options={teacherOptions}
+                      placeholder="例如: Henry Liu"
+                      inputClassName="h-11 rounded-xl bg-slate-50 border-slate-200"
+                    />
                   </div>
                </div>
             </div>

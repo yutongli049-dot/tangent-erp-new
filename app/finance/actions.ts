@@ -2,338 +2,192 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
 
-// 🌟 核心利器：动态获取新西兰当日的时区偏移量 (+12:00 或 +13:00)
-// 彻底免疫服务器的时区干扰
-function getNZOffset(dateStr: string) {
-   const d = new Date(`${dateStr}T12:00:00Z`); 
-   const formatter = new Intl.DateTimeFormat('en-US', {
-       timeZone: 'Pacific/Auckland',
-       timeZoneName: 'shortOffset'
-   });
-   const parts = formatter.formatToParts(d);
-   const tz = parts.find(p => p.type === 'timeZoneName')?.value;
-   if (tz && tz.includes('+13')) return '+13:00';
-   return '+12:00';
-}
-
-// 1. 创建预约 (教培)
-export async function createBooking(prevState: any, formData: FormData) {
+// 1. 创建流水 (保持不变)
+export async function createTransaction(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "未登录" };
 
+  const type = formData.get("type");
+  const amount = formData.get("amount");
+  const category = formData.get("category");
+  const description = formData.get("description");
+  const date = formData.get("date") as string;
+  const businessId = formData.get("businessId");
+  const proofUrl = formData.get("proofUrl") as string;
+  
   const studentId = formData.get("studentId") as string;
-  const dateStr = formData.get("date") as string; 
-  const timeStr = formData.get("time") as string; 
-  const duration = Number(formData.get("duration"));
-  const location = formData.get("location") as string;
-  const businessId = formData.get("businessId") as string;
-  const subject = formData.get("subject") as string;
-  const teacher = formData.get("teacher") as string;
-  const notes = formData.get("notes") as string;
-  
-  const repeatMode = formData.get("repeatMode") as string || "none"; 
-  const endMode = formData.get("endMode") as string || "count"; 
-  const repeatCount = Number(formData.get("repeatCount")) || 1;
-  const endDateStr = formData.get("endDate") as string;
+  const hoursToAdd = Number(formData.get("hoursToAdd"));
 
-  if (!studentId || !dateStr) return { error: "信息不完整" };
+  const { error: txError } = await supabase.from("transactions").insert({
+    type,
+    amount: Number(amount),
+    category,
+    description,
+    transaction_date: date,
+    business_unit_id: businessId,
+    proof_img_url: proofUrl,
+    created_by: user.id,
+    student_id: studentId || null, 
+    quantity: hoursToAdd > 0 ? hoursToAdd : null 
+  });
 
-  // 🧠 纯数学推算：只使用 UTC 确保计算不出差错
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const baseDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); 
-  const startDayOfWeek = baseDate.getUTCDay(); 
+  if (txError) return { error: txError.message };
 
-  let schedule: { dayOfWeek: string, time: string }[] = [];
-  if (repeatMode === 'weekly') {
-      const wsStr = formData.get("weeklySchedule") as string;
-      if (wsStr) {
-          try { schedule = JSON.parse(wsStr); } catch(e) {}
-      }
-  } else {
-      schedule = [{ dayOfWeek: startDayOfWeek.toString(), time: timeStr }];
-  }
-
-  let targetEndDateObj: Date | null = null;
-  if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
-    const [ey, em, ed] = endDateStr.split('-').map(Number);
-    targetEndDateObj = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59));
-  }
-
-  const bookingsToInsert = [];
-  let weeksProcessed = 0;
-  const maxLoops = 52; 
-
-  while (weeksProcessed < maxLoops) {
-    if (repeatMode === 'none' && weeksProcessed >= 1) break;
-    if (repeatMode === 'weekly' && endMode === 'count' && weeksProcessed >= repeatCount) break;
-
-    for (const session of schedule) {
-      const dayDiff = Number(session.dayOfWeek) - startDayOfWeek;
-      const daysToAdd = (weeksProcessed * 7) + dayDiff;
-      
-      if (weeksProcessed === 0 && dayDiff < 0) continue;
-
-      const sessionDate = new Date(baseDate.getTime());
-      sessionDate.setUTCDate(sessionDate.getUTCDate() + daysToAdd);
-
-      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDate > targetEndDateObj) {
-          continue; 
-      }
-
-      // 生成安全的 YYYY-MM-DD
-      const localDateStr = `${sessionDate.getUTCFullYear()}-${String(sessionDate.getUTCMonth() + 1).padStart(2, '0')}-${String(sessionDate.getUTCDate()).padStart(2, '0')}`;
-      const offset = getNZOffset(localDateStr);
-      
-      // 🚀 组装绝对时间戳 (例如: 2026-05-03T10:00:00+12:00)
-      const startDateTimeStr = `${localDateStr}T${session.time}:00${offset}`;
-      const startDateObjParsed = new Date(startDateTimeStr);
-      const endDateTimeStr = new Date(startDateObjParsed.getTime() + duration * 60 * 60 * 1000).toISOString();
-
-      bookingsToInsert.push({
-        student_id: studentId,
-        start_time: startDateTimeStr, // 直接丢给数据库解析
-        end_time: endDateTimeStr,
-        duration: duration,
-        location: location,
-        business_unit_id: businessId,
-        status: 'confirmed',
-        subject: subject || null,
-        teacher: teacher || null,
-        notes: notes || null
-      });
-    }
-
-    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj) {
-      const endOfWeek = new Date(baseDate.getTime());
-      endOfWeek.setUTCDate(endOfWeek.getUTCDate() + (weeksProcessed * 7) + 6);
-      if (endOfWeek > targetEndDateObj) break;
-    }
-
-    weeksProcessed++;
-  }
-
-  const { error } = await supabase.from("bookings").insert(bookingsToInsert);
-  if (error) return { error: error.message };
-  
-  revalidatePath("/bookings");
-  return { success: true };
-}
-
-// 2. 更新预约
-export async function updateBooking(id: string, data: { startTime: string, duration: number, location: string }) {
-  const supabase = await createClient();
-  const startDate = new Date(data.startTime);
-  const endDate = new Date(startDate.getTime() + data.duration * 60 * 60 * 1000);
-
-  const { error } = await supabase.from("bookings").update({
-    start_time: startDate.toISOString(),
-    end_time: endDate.toISOString(),
-    duration: data.duration,
-    location: data.location
-  }).eq("id", id);
-
-  if (error) return { error: error.message };
-  revalidatePath("/bookings");
-  return { success: true };
-}
-
-// 3. 完成预约
-export async function completeBooking(id: string, studentId: string, duration: number) {
-  const supabase = await createClient();
-  const { error: bookingError } = await supabase.from("bookings").update({ status: 'completed' }).eq("id", id);
-  if (bookingError) return { error: bookingError.message };
-
-  const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
-  if (student) {
-    await supabase.from("students").update({ balance: Number(student.balance) - duration }).eq("id", studentId);
-  }
-
-  revalidatePath("/bookings");
-  revalidatePath("/students");
-  revalidatePath("/finance"); 
-  return { success: true };
-}
-
-// 4. 取消预约
-export async function cancelBooking(id: string) {
-  const supabase = await createClient();
-  const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
-  if (!booking) return { error: "Booking not found" };
-
-  if (booking.status === 'completed' && booking.student_id) {
-    const { data: student } = await supabase.from("students").select("balance").eq("id", booking.student_id).single();
+  // 自动充值逻辑
+  if (studentId && hoursToAdd > 0 && type === 'income') {
+    const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
     if (student) {
-      await supabase.from("students").update({ balance: Number(student.balance) + Number(booking.duration) }).eq("id", booking.student_id);
+      await supabase.from("students").update({ balance: Number(student.balance) + hoursToAdd }).eq("id", studentId);
     }
   }
 
-  const { error } = await supabase.from("bookings").update({ status: 'cancelled' }).eq("id", id);
-  if (error) return { error: error.message };
-  
-  revalidatePath("/bookings");
-  revalidatePath("/students");
   revalidatePath("/finance");
+  revalidatePath("/");
+  revalidatePath("/students");
   return { success: true };
 }
 
-// 5. 删除预约
-export async function deleteBooking(id: string) {
+// 2. ✅ 升级：删除流水 (带回滚逻辑)
+export async function deleteTransaction(id: string) {
   const supabase = await createClient();
-  const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
-  if (booking && booking.status === 'completed' && booking.student_id) {
-    const { data: student } = await supabase.from("students").select("balance").eq("id", booking.student_id).single();
-    if (student) {
-      await supabase.from("students").update({ balance: Number(student.balance) + Number(booking.duration) }).eq("id", booking.student_id);
-    }
-  }
-
-  const { error } = await supabase.from("bookings").delete().eq("id", id);
-  if (error) return { error: error.message };
   
-  revalidatePath("/bookings");
-  revalidatePath("/students");
-  revalidatePath("/finance");
-  return { success: true };
-}
-
-// 6. 驾校极速排课 - ✅ 同步修复
-export async function quickCreateDrivingBooking(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "未登录" };
-
-  const businessId = formData.get("businessId") as string;
-  const identifier = formData.get("identifier") as string; 
-  const dateStr = formData.get("date") as string;
-  const timeStr = formData.get("time") as string;
-  const duration = Number(formData.get("duration"));
-  const location = formData.get("location") as string;
-  const actualRate = Number(formData.get("actualRate"));
-  const subject = formData.get("subject") as string;
-  const notes = formData.get("notes") as string;
-  
-  const repeatMode = formData.get("repeatMode") as string || "none"; 
-  const endMode = formData.get("endMode") as string || "count"; 
-  const repeatCount = Number(formData.get("repeatCount")) || 1;
-  const endDateStr = formData.get("endDate") as string;
-  
-  const metadata = {
-    useInstructorCar: formData.get("useInstructorCar") === "true",
-    needPickup: formData.get("needPickup") === "true",
-    pickupAddress: formData.get("pickupAddress") as string,
-    plateNumber: formData.get("plateNumber") as string,
-  };
-
-  if (!identifier || !dateStr) return { error: "信息不完整" };
-
-  let studentId = "";
-  const { data: existingStudent } = await supabase
-    .from("students")
-    .select("id")
-    .eq("business_unit_id", businessId)
-    .or(`student_code.eq.${identifier},name.eq.${identifier}`)
-    .limit(1)
+  // A. 删除前先查询：这条流水是否关联了学生充值？
+  const { data: tx } = await supabase
+    .from("transactions")
+    .select("student_id, quantity, type, category")
+    .eq("id", id)
     .single();
 
-  if (existingStudent) {
-    studentId = existingStudent.id;
-  } else {
-    const { data: newStudent, error: createError } = await supabase
+  // B. 如果是“充值流水”，则需要把充进去的课时“扣回来”
+  // 条件：关联了学生 + 有数量 + 是收入 + 分类是学费
+  if (tx && tx.student_id && tx.quantity && tx.quantity > 0 && tx.type === 'income') {
+    // 查当前余额
+    const { data: student } = await supabase
       .from("students")
-      .insert({
-        name: identifier, 
-        student_code: identifier, 
-        business_unit_id: businessId,
-        level: "Driving",
-        balance: 0,
-        hourly_rate: actualRate 
-      })
-      .select("id")
+      .select("balance")
+      .eq("id", tx.student_id)
       .single();
-      
-    if (createError) return { error: "学员创建失败: " + createError.message };
-    studentId = newStudent.id;
-  }
-
-  // 🧠 纯数学推算
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const baseDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); 
-  const startDayOfWeek = baseDate.getUTCDay(); 
-
-  let schedule: { dayOfWeek: string, time: string }[] = [];
-  if (repeatMode === 'weekly') {
-      const wsStr = formData.get("weeklySchedule") as string;
-      if (wsStr) {
-          try { schedule = JSON.parse(wsStr); } catch(e) {}
-      }
-  } else {
-      schedule = [{ dayOfWeek: startDayOfWeek.toString(), time: timeStr }];
-  }
-
-  let targetEndDateObj: Date | null = null;
-  if (repeatMode === 'weekly' && endMode === 'date' && endDateStr) {
-    const [ey, em, ed] = endDateStr.split('-').map(Number);
-    targetEndDateObj = new Date(Date.UTC(ey, em - 1, ed, 23, 59, 59));
-  }
-
-  const bookingsToInsert = [];
-  let weeksProcessed = 0;
-  const maxLoops = 52; 
-
-  while (weeksProcessed < maxLoops) {
-    if (repeatMode === 'none' && weeksProcessed >= 1) break;
-    if (repeatMode === 'weekly' && endMode === 'count' && weeksProcessed >= repeatCount) break;
-
-    for (const session of schedule) {
-      const dayDiff = Number(session.dayOfWeek) - startDayOfWeek;
-      const daysToAdd = (weeksProcessed * 7) + dayDiff;
-      
-      if (weeksProcessed === 0 && dayDiff < 0) continue;
-
-      const sessionDate = new Date(baseDate.getTime());
-      sessionDate.setUTCDate(sessionDate.getUTCDate() + daysToAdd);
-
-      if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj && sessionDate > targetEndDateObj) {
-          continue; 
-      }
-
-      const localDateStr = `${sessionDate.getUTCFullYear()}-${String(sessionDate.getUTCMonth() + 1).padStart(2, '0')}-${String(sessionDate.getUTCDate()).padStart(2, '0')}`;
-      const offset = getNZOffset(localDateStr);
-      
-      const startDateTimeStr = `${localDateStr}T${session.time}:00${offset}`;
-      const startDateObjParsed = new Date(startDateTimeStr);
-      const endDateTimeStr = new Date(startDateObjParsed.getTime() + duration * 60 * 60 * 1000).toISOString();
-
-      bookingsToInsert.push({
-        student_id: studentId,
-        start_time: startDateTimeStr,
-        end_time: endDateTimeStr,
-        duration: duration,
-        location: location,
-        business_unit_id: businessId,
-        status: 'confirmed',
-        actual_rate: actualRate,
-        subject: subject || null,
-        notes: notes || null,
-        metadata: metadata
-      });
+    
+    if (student) {
+      const newBalance = Number(student.balance) - Number(tx.quantity);
+      // 执行回滚扣费
+      await supabase
+        .from("students")
+        .update({ balance: newBalance })
+        .eq("id", tx.student_id);
     }
-
-    if (repeatMode === 'weekly' && endMode === 'date' && targetEndDateObj) {
-      const endOfWeek = new Date(baseDate.getTime());
-      endOfWeek.setUTCDate(endOfWeek.getUTCDate() + (weeksProcessed * 7) + 6);
-      if (endOfWeek > targetEndDateObj) break;
-    }
-
-    weeksProcessed++;
   }
 
-  const { error } = await supabase.from("bookings").insert(bookingsToInsert);
+  // C. 无论是否回滚，最后都物理删除这条流水
+  const { error } = await supabase.from("transactions").delete().eq("id", id);
+  
   if (error) return { error: error.message };
   
-  revalidatePath("/bookings");
-  revalidatePath("/students");
+  revalidatePath("/finance");
+  revalidatePath("/students"); // 刷新学生页面的余额
+  revalidatePath("/");
   return { success: true };
+}
+
+// 3. 编辑流水 (保持不变)
+export async function updateTransaction(
+  id: string, 
+  data: { amount: number; category: string; description: string; date: string; type: string }
+) {
+  const supabase = await createClient();
+  // 注意：目前编辑流水不涉及“修改关联课时”，因为逻辑太复杂容易出错。
+  // 建议用户如果填错了课时，直接删除重记，这样会触发上面的回滚逻辑，更安全。
+  
+  const { error } = await supabase
+    .from("transactions")
+    .update({
+      amount: data.amount,
+      category: data.category,
+      description: data.description,
+      transaction_date: data.date,
+      type: data.type
+    })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/finance");
+  revalidatePath("/");
+  return { success: true };
+}
+
+// 4. 获取概览 (保持不变)
+export async function getFinanceStats(businessId: string, range: string) {
+  const supabase = await createClient();
+  const now = new Date();
+  let startDate = new Date();
+  let endDate = new Date();
+
+  switch (range) {
+    case "week": startDate = startOfWeek(now, { weekStartsOn: 1 }); endDate = endOfWeek(now, { weekStartsOn: 1 }); break;
+    case "month": startDate = startOfMonth(now); endDate = endOfMonth(now); break;
+    case "prev_month": const prev = subMonths(now, 1); startDate = startOfMonth(prev); endDate = endOfMonth(prev); break;
+    case "3months": startDate = startOfMonth(subMonths(now, 2)); endDate = endOfMonth(now); break;
+    case "year": startDate = startOfYear(now); endDate = endOfYear(now); break;
+    default: startDate = startOfMonth(now); endDate = endOfMonth(now);
+  }
+
+  const startStr = startDate.toISOString();
+  const endStr = endDate.toISOString();
+
+  const [transactionsRes, bookingsRes] = await Promise.all([
+    supabase.from("transactions").select("*").eq("business_unit_id", businessId).gte("transaction_date", startStr).lte("transaction_date", endStr).order("transaction_date", { ascending: false }),
+    supabase.from("bookings").select(`start_time, duration, student:students(hourly_rate)`).eq("business_unit_id", businessId).eq("status", "completed").gte("start_time", startStr).lte("start_time", endStr),
+  ]);
+
+  const transactions = transactionsRes.data || [];
+  const bookings = bookingsRes.data || [];
+  
+  let income = 0;
+  let expense = 0;
+  let realized = 0;
+
+  transactions.forEach(t => {
+    if (t.type === 'income') income += Number(t.amount);
+    else expense += Number(t.amount);
+  });
+
+  bookings.forEach((b: any) => {
+    const rate = b.student?.hourly_rate || 70; 
+    realized += (b.duration * rate);
+  });
+
+  const daysInterval = eachDayOfInterval({ start: startDate, end: endDate });
+  const chartData = daysInterval.map(day => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    let dailyIncome = 0;
+    let dailyExpense = 0;
+    let dailyRealized = 0;
+
+    transactions.forEach(t => {
+      if (t.transaction_date.startsWith(dateStr)) {
+        if (t.type === 'income') dailyIncome += Number(t.amount);
+        else dailyExpense += Number(t.amount);
+      }
+    });
+
+    bookings.forEach((b: any) => {
+      if (b.start_time.startsWith(dateStr)) {
+        dailyRealized += (b.duration * (b.student?.hourly_rate || 70));
+      }
+    });
+
+    return {
+      date: format(day, ['year', '3months'].includes(range) ? 'MM-dd' : 'dd'),
+      fullDate: dateStr,
+      income: dailyIncome,
+      expense: dailyExpense,
+      realized: dailyRealized,
+      net: dailyIncome - dailyExpense
+    };
+  });
+
+  return { income, expense, net: income - expense, realized, transactions, chartData };
 }
