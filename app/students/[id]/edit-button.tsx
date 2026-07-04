@@ -10,12 +10,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { PAYMENT_TYPE_OPTIONS } from "@/lib/student-payment";
 
 export default function EditStudentButton({ student }: { student: any }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(student);
   const router = useRouter();
+
+  const handleOpen = () => {
+    setData({ ...student, targetBalance: Number(student.balance) });
+    setOpen(true);
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -24,8 +30,10 @@ export default function EditStudentButton({ student }: { student: any }) {
       studentCode: data.student_code,
       subject: data.subject,
       level: data.level,
-      hourlyRate: data.hourly_rate,
-      teacher: data.teacher
+      hourlyRate: Number(data.hourly_rate),
+      teacher: data.teacher,
+      targetBalance: Number(data.targetBalance),
+      paymentType: data.payment_type,
     });
     setLoading(false);
 
@@ -40,7 +48,7 @@ export default function EditStudentButton({ student }: { student: any }) {
 
   return (
     <>
-      <Button variant="outline" size="icon" onClick={() => setOpen(true)}>
+      <Button variant="outline" size="icon" onClick={handleOpen}>
         <Pencil className="h-4 w-4 text-slate-500" />
       </Button>
 
@@ -85,6 +93,33 @@ export default function EditStudentButton({ student }: { student: any }) {
                  <Label>老师</Label>
                  <Input value={data.teacher || ""} onChange={(e) => setData({...data, teacher: e.target.value})} />
                </div>
+             </div>
+             <div className="space-y-2">
+               <Label>缴费类型</Label>
+               <Select value={data.payment_type || "monthly"} onValueChange={(val) => setData({ ...data, payment_type: val })}>
+                 <SelectTrigger><SelectValue /></SelectTrigger>
+                 <SelectContent>
+                   {PAYMENT_TYPE_OPTIONS.map((opt) => (
+                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>当前总课时</Label>
+               <div className="relative">
+                 <Input
+                   type="number"
+                   step="0.5"
+                   value={data.targetBalance}
+                   onChange={(e) => setData({ ...data, targetBalance: e.target.value })}
+                   className="pr-8"
+                 />
+                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">h</span>
+               </div>
+               <p className="text-[11px] text-slate-400 leading-snug">
+                 提示：手动修改总课时将由系统自动生成一笔无现金流的 [系统调账] 流水，以供财务审计。
+               </p>
              </div>
           </div>
           <DialogFooter>

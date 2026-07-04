@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreatableCombobox } from "@/components/CreatableCombobox";
 import { fetchFormSuggestions } from "@/lib/form-suggestions";
+import { PAYMENT_TYPE_OPTIONS } from "@/lib/student-payment";
 import { 
   Loader2, ArrowLeft, Wallet, GraduationCap, User, BookOpen, 
   Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, Car
@@ -39,6 +40,7 @@ export default function NewStudentPage() {
   const [hourlyRate, setHourlyRate] = useState("70");
   const [balance, setBalance] = useState("0");
   const [level, setLevel] = useState("Year 11");
+  const [paymentType, setPaymentType] = useState("monthly");
   const [subject, setSubject] = useState("");
   const [teacher, setTeacher] = useState("");
   const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
@@ -88,6 +90,7 @@ export default function NewStudentPage() {
     const formData = new FormData(e.currentTarget);
     formData.append("businessId", currentBusinessId);
     formData.append("level", level);
+    formData.append("paymentType", paymentType);
     formData.set("subject", subject);
     formData.set("teacher", teacher);
 
@@ -176,6 +179,19 @@ export default function NewStudentPage() {
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">Hrs</span>
                     </div>
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-xs text-slate-500">缴费类型</Label>
+                    <Select value={paymentType} onValueChange={setPaymentType}>
+                      <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                </div>
             </div>

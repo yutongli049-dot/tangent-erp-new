@@ -19,6 +19,7 @@ import {
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { format, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { isBookingUnpaid } from "@/lib/student-payment";
 
 // 简单的下拉菜单组件
 function MobileUserMenu({ user, currentLabel, businesses, onSwitch, onSignOut }: any) {
@@ -161,10 +162,10 @@ export default function Home() {
     if (!studentUsage[sid]) studentUsage[sid] = 0;
     
     const balance = Number(b.student?.balance || 0);
+    const paymentType = b.student?.payment_type;
     const newUsage = studentUsage[sid] + Number(b.duration);
     
-    // 如果已经消耗的课时加上这节课的课时，超出了余额，这节课就是“待缴费”
-    const isUnpaid = newUsage > balance;
+    const isUnpaid = isBookingUnpaid(balance, paymentType, newUsage);
     
     studentUsage[sid] = newUsage;
     

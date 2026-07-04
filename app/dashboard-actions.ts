@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { startOfMonth, endOfMonth, startOfDay } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
+import { isPaymentAlert } from "@/lib/student-payment";
 
 export async function getDashboardStats(businessId: string) {
   const supabase = await createClient();
@@ -31,7 +32,7 @@ export async function getDashboardStats(businessId: string) {
       .select(`
         id, start_time, end_time, duration, status, location,
         student:students (
-          id, name, student_code, teacher, subject, balance
+          id, name, student_code, teacher, subject, balance, payment_type
         )
       `)
       .eq("business_unit_id", businessId)
@@ -40,7 +41,7 @@ export async function getDashboardStats(businessId: string) {
     // C. 查所有学生 (算资金池)
     supabase
       .from("students")
-      .select("balance, hourly_rate, name, id")
+      .select("balance, hourly_rate, name, id, payment_type")
       .eq("business_unit_id", businessId)
   ]);
 
@@ -88,7 +89,7 @@ export async function getDashboardStats(businessId: string) {
     const bal = Number(s.balance);
     const rate = Number(s.hourly_rate) || 0;
     if (bal > 0) unearnedRevenue += bal * rate;
-    if (bal < 3) lowBalanceStudents.push(s);
+    if (isPaymentAlert(bal, s.payment_type)) lowBalanceStudents.push(s);
   });
 
   return {

@@ -1,6 +1,6 @@
 # Tangent ERP — Architecture Reference
 
-> 面向 AI 辅助开发的快速上下文同步文档。最后更新：2026-07-03
+> 面向 AI 辅助开发的快速上下文同步文档。最后更新：2026-07-04
 
 ## 技术栈
 
@@ -97,12 +97,42 @@ tangent-erp-new/
 ```
 business_units (逻辑枚举，constants.ts)
     │
-    ├── students          balance, hourly_rate, subject, teacher, student_code
+    ├── students          balance, hourly_rate, payment_type, subject, teacher, student_code
     ├── bookings          start_time (UTC), end_time, duration, status, location, subject, teacher, notes
     └── transactions      income/expense, category, amount
 
 profiles ← Supabase Auth
 ```
+
+### 学员缴费类型 (`payment_type`)
+
+| value | 含义 | UI 标签 |
+|-------|------|---------|
+| `single` | 一课一缴（后付费） | 一课一缴 |
+| `monthly` | 一月一缴 | 一月一缴 |
+| `ten_sessions` | 十节课一缴 | 十节课一缴 |
+| `term` | 一学期一缴 | 一学期一缴 |
+| `custom` | 自定义周期 | 自定义 |
+
+默认值：`monthly`。定义与判定逻辑见 `lib/student-payment.ts`。
+
+### 动态红灯 / 待续费判定
+
+```
+待排课时 = balance - Σ(confirmed bookings.duration)
+
+红灯报警 isPaymentAlert(balance, payment_type):
+  single      → balance <= -1  （0 或正数视为正常）
+  其他预付费   → balance <= 0
+
+待办课程「待缴费」isBookingUnpaid:
+  single      → balance <= -1
+  其他预付费   → 累计待消课时 > balance 或 balance <= 0
+```
+
+涉及页面：Dashboard 待续费学员侧栏、待办课程标签、学员列表「欠费」Badge、学员详情余额卡片。
+
+**待排课时为负**：仅表示已排课超出当前余额（含未来周期预测），前端降权为淡灰 + Info 提示，不再作为红灯依据。
 
 ### 排课循环模式 (`repeatMode`)
 
@@ -177,9 +207,63 @@ bookings.status = "completed"
 students.balance -= duration（roundHours）
 ```
 
-取消/删除已完成课程会回滚 balance。
+取消/删除已完成课程会回滚 balance（RPC `increment_student_balance` 回加课时）。
 
-### 5. ICS 日历订阅
+### 5. 财务闭环（Finance Architecture）
+
+教培课时制采用 **预收负债 → 消课转产值 → 退课减负债** 模型：
+
+| 操作 | 课时 (balance) | transactions 流水 | 现金流 / 产值 |
+|------|----------------|-------------------|---------------|
+| **充值** | `+hours`（增加负债） | `income` / Tuition，金额 = hours × hourly_rate | 现金流入 |
+| **退课** | `-hours`（减少负债） | `expense` / Tuition，金额 = hours × hourly_rate | 现金流出 |
+| **消课** (completeBooking) | `-duration`（负债转交付） | **不写流水** | 产值由 `bookings.status = completed` × hourly_rate 推算 |
+| **管理员调账** | RPC 修正至 targetBalance | `adjustment` / Tuition，amount = 0 | 不影响现金流 |
+
+**数据流：**
+
+```
+充值 topUpStudent / createStudent
+  → increment_student_balance(row_id, +hours)
+  → transactions.insert(type: income)
+
+退课 refundStudent
+  → increment_student_balance(-hours)
+  → transactions.insert(type: expense, [退课退款] ...)
+
+消课 completeBooking
+  → bookings.status = completed
+  → increment_student_balance(-duration)
+  → 无 transaction（避免重复计收入）
+
+管理员校正 updateStudent(targetBalance)
+  → diff = targetBalance - current_balance
+  → increment_student_balance(diff)
+  → transactions.insert(type: adjustment, amount: 0)
+```
+
+**产值 (Realized Revenue)**：`getFinanceStats` 从已完成 bookings 汇总 `duration × student.hourly_rate`，与 transactions 中的 income 解耦。
+
+**依赖 RPC**（需在 Supabase 控制台创建）：
+
+```sql
+CREATE OR REPLACE FUNCTION increment_student_balance(row_id uuid, x numeric)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE students
+  SET balance = round((balance + x)::numeric, 1)
+  WHERE id = row_id;
+END;
+$$;
+```
+
+TypeScript 调用示例：
+
+```typescript
+await supabase.rpc("increment_student_balance", { row_id: studentId, x: hoursDelta });
+```
+
+### 6. ICS 日历订阅
 
 ```
 GET /api/calendar/[businessId]
@@ -204,7 +288,7 @@ text/calendar 响应
 **注意：**
 
 - 多租户过滤：部分页面仍在客户端按 `businessId` filter，服务端查询有待加强
-- 余额更新为 read-modify-write，无 DB 事务
+- 余额更新统一走 RPC `increment_student_balance(row_id, x)`（充值、退课、消课、调账、完课回滚）
 - 仓库内无 migration 文件，schema 需对照 Supabase 控制台
 
 ---
@@ -229,6 +313,15 @@ text/calendar 响应
 
 `fetchFormSuggestions()` — 从 `students` + `bookings` 提取去重 subject/teacher/location  
 `partitionStudentsByActivity()` — 活跃/沉寂学员分组（近一月排课）
+
+### `lib/student-payment.ts`
+
+| 函数 | 用途 |
+|------|------|
+| `PAYMENT_TYPE_OPTIONS` | 缴费类型下拉选项 |
+| `isPaymentAlert(balance, paymentType)` | 红灯 / 待续费判定 |
+| `isBookingUnpaid(balance, paymentType, cumulativeUsage)` | 待办课程待缴费标签 |
+| `getPaymentTypeLabel(type)` | 中文标签展示 |
 
 ### `lib/utils.ts`
 

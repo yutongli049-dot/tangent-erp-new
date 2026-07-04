@@ -14,7 +14,8 @@ import {
 import { format } from "date-fns";
 import TopUpButton from "./top-up-button"; 
 import EditStudentButton from "./edit-button";
-import { getStudentHistory } from "../actions"; // ✅ 引入新Action
+import { getStudentHistory } from "../actions";
+import { isPaymentAlert, getPaymentTypeLabel } from "@/lib/student-payment";
 
 // 底部导航 (保持一致)
 const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
@@ -43,7 +44,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
   const { bookings, transactions } = await getStudentHistory(id);
 
   const estimatedValue = (student.balance || 0) * (student.hourly_rate || 0);
-  const isLowBalance = Number(student.balance) < 3;
+  const paymentAlert = isPaymentAlert(Number(student.balance), student.payment_type);
   const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${student.name}&backgroundColor=e5e7eb,d1d5db,9ca3af`;
 
   return (
@@ -81,19 +82,21 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                </div>
                <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
                  <span className="inline-block h-2 w-2 rounded-full bg-slate-300"></span>{student.level || "年级未知"}
+                 <span className="text-slate-300">·</span>
+                 {getPaymentTypeLabel(student.payment_type)}
                </p>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-               <div className={`p-4 rounded-2xl border ${isLowBalance ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
+               <div className={`p-4 rounded-2xl border ${paymentAlert ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'}`}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Clock className={`h-4 w-4 ${isLowBalance ? 'text-rose-500' : 'text-emerald-500'}`} />
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isLowBalance ? 'text-rose-400' : 'text-emerald-400'}`}>剩余课时</span>
+                    <Clock className={`h-4 w-4 ${paymentAlert ? 'text-rose-500' : 'text-emerald-500'}`} />
+                    <span className={`text-xs font-bold uppercase tracking-wider ${paymentAlert ? 'text-rose-400' : 'text-emerald-400'}`}>剩余课时</span>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className={`text-3xl font-black ${isLowBalance ? 'text-rose-600' : 'text-emerald-600'}`}>{Number(student.balance)}</span>
-                    <span className={`text-sm font-bold ${isLowBalance ? 'text-rose-400' : 'text-emerald-500'}`}>hrs</span>
+                    <span className={`text-3xl font-black ${paymentAlert ? 'text-rose-600' : 'text-emerald-600'}`}>{Number(student.balance)}</span>
+                    <span className={`text-sm font-bold ${paymentAlert ? 'text-rose-400' : 'text-emerald-500'}`}>hrs</span>
                   </div>
                </div>
                <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/50">

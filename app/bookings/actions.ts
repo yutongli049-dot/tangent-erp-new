@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { durationToMs, roundHours } from "@/lib/utils";
+import { durationToMs } from "@/lib/utils";
+import { incrementStudentBalance } from "@/lib/student-balance";
 import {
   addCalendarDaysInNZ,
   addCalendarMonthsInNZ,
@@ -200,16 +201,14 @@ export async function updateBooking(
   return { success: true };
 }
 
-// 3. 完成预约
+// 3. 完成预约 — 仅扣课时，不写 income 流水（充值时已计现金收入；产值由 completed bookings 推算）
 export async function completeBooking(id: string, studentId: string, duration: number) {
   const supabase = await createClient();
   const { error: bookingError } = await supabase.from("bookings").update({ status: "completed" }).eq("id", id);
   if (bookingError) return { error: bookingError.message };
 
-  const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
-  if (student) {
-    await supabase.from("students").update({ balance: roundHours(Number(student.balance) - duration) }).eq("id", studentId);
-  }
+  const balanceRes = await incrementStudentBalance(supabase, studentId, -duration);
+  if (balanceRes.error) return { error: balanceRes.error };
 
   revalidatePath("/bookings");
   revalidatePath("/students");
@@ -224,10 +223,8 @@ export async function cancelBooking(id: string) {
   if (!booking) return { error: "Booking not found" };
 
   if (booking.status === "completed" && booking.student_id) {
-    const { data: student } = await supabase.from("students").select("balance").eq("id", booking.student_id).single();
-    if (student) {
-      await supabase.from("students").update({ balance: roundHours(Number(student.balance) + Number(booking.duration)) }).eq("id", booking.student_id);
-    }
+    const balanceRes = await incrementStudentBalance(supabase, booking.student_id, Number(booking.duration));
+    if (balanceRes.error) return { error: balanceRes.error };
   }
 
   const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", id);
@@ -244,10 +241,8 @@ export async function deleteBooking(id: string) {
   const supabase = await createClient();
   const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
   if (booking && booking.status === "completed" && booking.student_id) {
-    const { data: student } = await supabase.from("students").select("balance").eq("id", booking.student_id).single();
-    if (student) {
-      await supabase.from("students").update({ balance: roundHours(Number(student.balance) + Number(booking.duration)) }).eq("id", booking.student_id);
-    }
+    const balanceRes = await incrementStudentBalance(supabase, booking.student_id, Number(booking.duration));
+    if (balanceRes.error) return { error: balanceRes.error };
   }
 
   const { error } = await supabase.from("bookings").delete().eq("id", id);

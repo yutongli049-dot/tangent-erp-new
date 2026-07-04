@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { incrementStudentBalance } from "@/lib/student-balance";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
 
 // 1. 创建流水 (保持不变)
@@ -36,12 +37,10 @@ export async function createTransaction(prevState: any, formData: FormData) {
 
   if (txError) return { error: txError.message };
 
-  // 自动充值逻辑
-  if (studentId && hoursToAdd > 0 && type === 'income') {
-    const { data: student } = await supabase.from("students").select("balance").eq("id", studentId).single();
-    if (student) {
-      await supabase.from("students").update({ balance: Number(student.balance) + hoursToAdd }).eq("id", studentId);
-    }
+  // 自动充值逻辑：Tuition 收入 → 原子增加课时
+  if (studentId && hoursToAdd > 0 && type === "income") {
+    const balanceRes = await incrementStudentBalance(supabase, studentId, hoursToAdd);
+    if (balanceRes.error) return { error: balanceRes.error };
   }
 
   revalidatePath("/finance");
@@ -63,22 +62,13 @@ export async function deleteTransaction(id: string) {
 
   // B. 如果是“充值流水”，则需要把充进去的课时“扣回来”
   // 条件：关联了学生 + 有数量 + 是收入 + 分类是学费
-  if (tx && tx.student_id && tx.quantity && tx.quantity > 0 && tx.type === 'income') {
-    // 查当前余额
-    const { data: student } = await supabase
-      .from("students")
-      .select("balance")
-      .eq("id", tx.student_id)
-      .single();
-    
-    if (student) {
-      const newBalance = Number(student.balance) - Number(tx.quantity);
-      // 执行回滚扣费
-      await supabase
-        .from("students")
-        .update({ balance: newBalance })
-        .eq("id", tx.student_id);
-    }
+  if (tx && tx.student_id && tx.quantity && tx.quantity > 0 && tx.type === "income") {
+    const balanceRes = await incrementStudentBalance(
+      supabase,
+      tx.student_id,
+      -Number(tx.quantity)
+    );
+    if (balanceRes.error) return { error: balanceRes.error };
   }
 
   // C. 无论是否回滚，最后都物理删除这条流水

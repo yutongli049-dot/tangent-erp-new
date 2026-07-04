@@ -13,10 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Trash2, Loader2, User, BookOpen, Pencil, 
   Search, Coins, MoreHorizontal, CalendarClock, ArchiveX, 
-  ChevronDown, ChevronUp, GraduationCap, Filter, SortAsc, SortDesc
+  ChevronDown, ChevronUp, GraduationCap, Filter, SortAsc, SortDesc, Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PAYMENT_TYPE_OPTIONS, isPaymentAlert } from "@/lib/student-payment";
 
 export function StudentList({ students }: { students: any[] }) {
   const { currentBusinessId } = useBusiness();
@@ -122,8 +123,10 @@ export function StudentList({ students }: { students: any[] }) {
       studentCode: editingStudent.student_code,
       subject: editingStudent.subject,
       level: editingStudent.level,
-      hourlyRate: editingStudent.hourly_rate,
+      hourlyRate: Number(editingStudent.hourly_rate),
       teacher: editingStudent.teacher,
+      targetBalance: Number(editingStudent.targetBalance),
+      paymentType: editingStudent.payment_type,
     });
     setEditLoading(false);
     if (res?.error) toast.error("更新失败: " + res.error);
@@ -160,6 +163,8 @@ export function StudentList({ students }: { students: any[] }) {
         .filter((b: any) => b.status === 'confirmed')
         .reduce((sum: number, b: any) => sum + Number(b.duration), 0);
       const unscheduledHours = Number((totalBalance - scheduledHours).toFixed(1));
+      const paymentAlert = isPaymentAlert(totalBalance, student.payment_type);
+      const isNegativeUnscheduled = unscheduledHours < 0;
 
       return (
         <div key={student.id} className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 hover:shadow-md transition-all gap-4">
@@ -169,6 +174,9 @@ export function StudentList({ students }: { students: any[] }) {
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors text-base truncate">{student.name}</h3>
                 {student.student_code && <Badge variant="outline" className="text-[10px] h-4 px-1.5 rounded-sm border-slate-200 text-slate-500 font-mono">{student.student_code}</Badge>}
+                {paymentAlert && (
+                  <Badge variant="destructive" className="bg-rose-100 text-rose-600 border-none px-1.5 py-0 h-4 text-[10px] shadow-none">欠费</Badge>
+                )}
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-500 truncate">
                  <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-slate-400"/> {student.level || "-"}</span>
@@ -179,18 +187,25 @@ export function StudentList({ students }: { students: any[] }) {
           </Link>
           <div className="flex items-center justify-between md:justify-end gap-6 border-t border-slate-100 md:border-t-0 pt-3 md:pt-0">
              <Link href={`/students/${student.id}`} className="flex items-center gap-4">
-                <div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总课时</span><span className={`text-base font-black ${totalBalance < 3 ? 'text-slate-400' : 'text-slate-700'}`}>{totalBalance}<span className="text-[10px] font-bold ml-0.5">h</span></span></div>
+                <div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总课时</span><span className={`text-base font-black ${paymentAlert ? 'text-rose-600' : 'text-slate-700'}`}>{totalBalance}<span className="text-[10px] font-bold ml-0.5">h</span></span></div>
                 <div className="h-8 w-px bg-slate-200"></div>
                 <div className="flex flex-col items-end w-16">
-                   <span className={`text-[10px] font-bold uppercase tracking-wider ${unscheduledHours < 0 ? 'text-rose-400' : unscheduledHours > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{unscheduledHours < 0 ? '欠费/超排' : '待排'}</span>
-                   <div className={`text-base font-black flex items-center gap-1 ${unscheduledHours < 0 ? 'text-rose-600' : unscheduledHours > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>{unscheduledHours}<span className="text-[10px] font-bold">h</span>{unscheduledHours > 0 && <CalendarClock className="h-3.5 w-3.5 ml-0.5" />}</div>
+                   <span className={`text-[10px] font-bold uppercase tracking-wider ${isNegativeUnscheduled ? 'text-slate-300' : unscheduledHours > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>待排</span>
+                   <div className={`text-base font-black flex items-center gap-1 ${isNegativeUnscheduled ? 'text-slate-300' : unscheduledHours > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                     {unscheduledHours}<span className="text-[10px] font-bold">h</span>
+                     {isNegativeUnscheduled ? (
+                       <span title="包含未来周期预测排课" className="inline-flex"><Info className="h-3.5 w-3.5 ml-0.5 text-slate-300" /></span>
+                     ) : unscheduledHours > 0 ? (
+                       <CalendarClock className="h-3.5 w-3.5 ml-0.5" />
+                     ) : null}
+                   </div>
                 </div>
              </Link>
              <div className="flex items-center gap-1">
                 <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1.5 rounded-lg" onClick={() => setTopUpTarget(student)}><Coins className="h-4 w-4" /> 充值</Button>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-xl">
-                    <DropdownMenuItem onClick={() => setEditingStudent(student)}><Pencil className="mr-2 h-4 w-4" /> 编辑资料</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditingStudent({ ...student, targetBalance: Number(student.balance) })}><Pencil className="mr-2 h-4 w-4" /> 编辑资料</DropdownMenuItem>
                     <DropdownMenuItem className="text-rose-600 focus:text-rose-600" onClick={() => handleDelete(student.id)}><Trash2 className="mr-2 h-4 w-4" /> 删除学员</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -292,6 +307,37 @@ export function StudentList({ students }: { students: any[] }) {
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">科目</Label><Input value={editingStudent.subject || ""} onChange={(e) => setEditingStudent({...editingStudent, subject: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">老师</Label><Input value={editingStudent.teacher || ""} onChange={(e) => setEditingStudent({...editingStudent, teacher: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">费率</Label><div className="col-span-3 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span><Input type="number" value={editingStudent.hourly_rate} onChange={(e) => setEditingStudent({...editingStudent, hourly_rate: e.target.value})} className="pl-6 h-9" /></div></div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs text-slate-500">缴费类型</Label>
+                <div className="col-span-3">
+                  <Select value={editingStudent.payment_type || "monthly"} onValueChange={(val) => setEditingStudent({ ...editingStudent, payment_type: val })}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right text-xs text-slate-500 pt-2">当前总课时</Label>
+                <div className="col-span-3 space-y-1">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={editingStudent.targetBalance}
+                      onChange={(e) => setEditingStudent({ ...editingStudent, targetBalance: e.target.value })}
+                      className="pr-8 h-9"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">h</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    提示：手动修改总课时将由系统自动生成一笔无现金流的 [系统调账] 流水，以供财务审计。
+                  </p>
+                </div>
+              </div>
             </div>
           )}
           <DialogFooter><Button onClick={handleSaveEdit} disabled={editLoading} className="w-full bg-indigo-600 rounded-xl">{editLoading ? <Loader2 className="animate-spin" /> : "保存修改"}</Button></DialogFooter>
