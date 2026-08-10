@@ -23,7 +23,7 @@ export default async function BookingsPage() {
     .from("bookings")
     .select(`
       *,
-      student:students ( id, name, teacher, subject, hourly_rate, student_code )
+      student:students ( id, name, teacher, subject, hourly_rate, student_code, currency )
     `)
     .order("start_time", { ascending: true });
 

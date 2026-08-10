@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { incrementStudentBalance } from "@/lib/student-balance";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
+import { aggregateByCurrency, DEFAULT_CURRENCY, normalizeCurrency } from "@/lib/currency";
 
-// 1. 创建流水 (保持不变)
+// 1. 创建流水
 export async function createTransaction(prevState: any, formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,6 +19,7 @@ export async function createTransaction(prevState: any, formData: FormData) {
   const date = formData.get("date") as string;
   const businessId = formData.get("businessId");
   const proofUrl = formData.get("proofUrl") as string;
+  const currency = normalizeCurrency(formData.get("currency") as string);
   
   const studentId = formData.get("studentId") as string;
   const hoursToAdd = Number(formData.get("hoursToAdd"));
@@ -32,12 +34,12 @@ export async function createTransaction(prevState: any, formData: FormData) {
     proof_img_url: proofUrl,
     created_by: user.id,
     student_id: studentId || null, 
-    quantity: hoursToAdd > 0 ? hoursToAdd : null 
+    quantity: hoursToAdd > 0 ? hoursToAdd : null,
+    currency,
   });
 
   if (txError) return { error: txError.message };
 
-  // 自动充值逻辑：Tuition 收入 → 原子增加课时
   if (studentId && hoursToAdd > 0 && type === "income") {
     const balanceRes = await incrementStudentBalance(supabase, studentId, hoursToAdd);
     if (balanceRes.error) return { error: balanceRes.error };
@@ -49,19 +51,16 @@ export async function createTransaction(prevState: any, formData: FormData) {
   return { success: true };
 }
 
-// 2. ✅ 升级：删除流水 (带回滚逻辑)
+// 2. 删除流水 (带回滚逻辑)
 export async function deleteTransaction(id: string) {
   const supabase = await createClient();
   
-  // A. 删除前先查询：这条流水是否关联了学生充值？
   const { data: tx } = await supabase
     .from("transactions")
     .select("student_id, quantity, type, category")
     .eq("id", id)
     .single();
 
-  // B. 如果是“充值流水”，则需要把充进去的课时“扣回来”
-  // 条件：关联了学生 + 有数量 + 是收入 + 分类是学费
   if (tx && tx.student_id && tx.quantity && tx.quantity > 0 && tx.type === "income") {
     const balanceRes = await incrementStudentBalance(
       supabase,
@@ -71,25 +70,22 @@ export async function deleteTransaction(id: string) {
     if (balanceRes.error) return { error: balanceRes.error };
   }
 
-  // C. 无论是否回滚，最后都物理删除这条流水
   const { error } = await supabase.from("transactions").delete().eq("id", id);
   
   if (error) return { error: error.message };
   
   revalidatePath("/finance");
-  revalidatePath("/students"); // 刷新学生页面的余额
+  revalidatePath("/students");
   revalidatePath("/");
   return { success: true };
 }
 
-// 3. 编辑流水 (保持不变)
+// 3. 编辑流水
 export async function updateTransaction(
   id: string, 
-  data: { amount: number; category: string; description: string; date: string; type: string }
+  data: { amount: number; category: string; description: string; date: string; type: string; currency?: string }
 ) {
   const supabase = await createClient();
-  // 注意：目前编辑流水不涉及“修改关联课时”，因为逻辑太复杂容易出错。
-  // 建议用户如果填错了课时，直接删除重记，这样会触发上面的回滚逻辑，更安全。
   
   const { error } = await supabase
     .from("transactions")
@@ -98,7 +94,8 @@ export async function updateTransaction(
       category: data.category,
       description: data.description,
       transaction_date: data.date,
-      type: data.type
+      type: data.type,
+      ...(data.currency ? { currency: normalizeCurrency(data.currency) } : {}),
     })
     .eq("id", id);
 
@@ -108,7 +105,7 @@ export async function updateTransaction(
   return { success: true };
 }
 
-// 4. 获取概览 (保持不变)
+// 4. 获取概览 — 双币种独立汇总，不折算
 export async function getFinanceStats(businessId: string, range: string) {
   const supabase = await createClient();
   const now = new Date();
@@ -135,14 +132,10 @@ export async function getFinanceStats(businessId: string, range: string) {
   const transactions = transactionsRes.data || [];
   const bookings = bookingsRes.data || [];
   
-  let income = 0;
-  let expense = 0;
+  const byCurrency = aggregateByCurrency(transactions);
+  const income = byCurrency.NZD.income;
+  const expense = byCurrency.NZD.expense;
   let realized = 0;
-
-  transactions.forEach(t => {
-    if (t.type === 'income') income += Number(t.amount);
-    else expense += Number(t.amount);
-  });
 
   bookings.forEach((b: any) => {
     const rate = b.student?.hourly_rate || 70; 
@@ -155,11 +148,20 @@ export async function getFinanceStats(businessId: string, range: string) {
     let dailyIncome = 0;
     let dailyExpense = 0;
     let dailyRealized = 0;
+    let dailyIncomeRmb = 0;
+    let dailyExpenseRmb = 0;
 
     transactions.forEach(t => {
       if (t.transaction_date.startsWith(dateStr)) {
-        if (t.type === 'income') dailyIncome += Number(t.amount);
-        else dailyExpense += Number(t.amount);
+        const cur = normalizeCurrency(t.currency);
+        const amt = Number(t.amount);
+        if (cur === "RMB") {
+          if (t.type === 'income') dailyIncomeRmb += amt;
+          else if (t.type === 'expense') dailyExpenseRmb += amt;
+        } else {
+          if (t.type === 'income') dailyIncome += amt;
+          else if (t.type === 'expense') dailyExpense += amt;
+        }
       }
     });
 
@@ -174,10 +176,22 @@ export async function getFinanceStats(businessId: string, range: string) {
       fullDate: dateStr,
       income: dailyIncome,
       expense: dailyExpense,
+      incomeRmb: dailyIncomeRmb,
+      expenseRmb: dailyExpenseRmb,
       realized: dailyRealized,
-      net: dailyIncome - dailyExpense
+      net: dailyIncome - dailyExpense,
+      netRmb: dailyIncomeRmb - dailyExpenseRmb,
     };
   });
 
-  return { income, expense, net: income - expense, realized, transactions, chartData };
+  return {
+    income,
+    expense,
+    net: income - expense,
+    realized,
+    byCurrency,
+    transactions,
+    chartData,
+    defaultCurrency: DEFAULT_CURRENCY,
+  };
 }

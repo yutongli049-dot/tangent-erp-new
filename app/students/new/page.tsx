@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CreatableCombobox } from "@/components/CreatableCombobox";
 import { fetchFormSuggestions } from "@/lib/form-suggestions";
 import { PAYMENT_TYPE_OPTIONS } from "@/lib/student-payment";
+import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency";
 import { 
   Loader2, ArrowLeft, Wallet, GraduationCap, User, BookOpen, 
   Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, Car
@@ -38,6 +39,7 @@ export default function NewStudentPage() {
   const [loading, setLoading] = useState(false);
 
   const [hourlyRate, setHourlyRate] = useState("70");
+  const [currency, setCurrency] = useState<Currency>("NZD");
   const [balance, setBalance] = useState("0");
   const [level, setLevel] = useState("Year 11");
   const [paymentType, setPaymentType] = useState("monthly");
@@ -91,6 +93,7 @@ export default function NewStudentPage() {
     formData.append("businessId", currentBusinessId);
     formData.append("level", level);
     formData.append("paymentType", paymentType);
+    formData.append("currency", currency);
     formData.set("subject", subject);
     formData.set("teacher", teacher);
 
@@ -153,18 +156,33 @@ export default function NewStudentPage() {
                  <Wallet className="h-4 w-4 text-emerald-500" /> 账户配置
                </div>
                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-slate-500">课时费率 ($/h)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                      <Input 
-                        name="hourlyRate" 
-                        type="number" 
-                        value={hourlyRate}
-                        onChange={(e) => setHourlyRate(e.target.value)}
-                        className="h-11 pl-7 rounded-xl border-slate-200 bg-white" 
-                      />
+                  <div className="space-y-2 col-span-2">
+                    <Label className="text-xs text-slate-500">课时费率</Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                          {currencySymbol(currency)}
+                        </span>
+                        <Input 
+                          name="hourlyRate" 
+                          type="number" 
+                          value={hourlyRate}
+                          onChange={(e) => setHourlyRate(e.target.value)}
+                          className="h-11 pl-7 rounded-xl border-slate-200 bg-white" 
+                        />
+                      </div>
+                      <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+                        <SelectTrigger className="h-11 w-[120px] rounded-xl border-slate-200 bg-white font-bold text-xs shrink-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CURRENCY_OPTIONS.map((c) => (
+                            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <p className="text-[10px] text-slate-400">费率与后续充值流水默认使用此币种</p>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-slate-500">初始课时 (Balance)</Label>
@@ -180,7 +198,7 @@ export default function NewStudentPage() {
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold">Hrs</span>
                     </div>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label className="text-xs text-slate-500">缴费类型</Label>
                     <Select value={paymentType} onValueChange={setPaymentType}>
                       <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white">

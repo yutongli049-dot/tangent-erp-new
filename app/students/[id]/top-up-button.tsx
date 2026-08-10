@@ -1,27 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { topUpStudent } from "../actions"; // 确保引入正确
+import { topUpStudent } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { CURRENCY_OPTIONS, type Currency } from "@/lib/currency";
 
-export default function TopUpButton({ studentId }: { studentId: string }) {
+export default function TopUpButton({ studentId, defaultCurrency = "NZD" }: { studentId: string; defaultCurrency?: string }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState<Currency>(defaultCurrency === "RMB" ? "RMB" : "NZD");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) setCurrency(defaultCurrency === "RMB" ? "RMB" : "NZD");
+    setOpen(next);
+  };
 
   const handleTopUp = async () => {
     if (!amount) return;
     setLoading(true);
 
-    // ✅ 修复核心报错：严格只传 2 个参数 (studentId, amount)
-    // 后端函数定义是: export async function topUpStudent(studentId: string, amount: number)
-    const res = await topUpStudent(studentId, Number(amount));
+    const res = await topUpStudent(studentId, Number(amount), currency);
 
     setLoading(false);
 
@@ -30,12 +36,13 @@ export default function TopUpButton({ studentId }: { studentId: string }) {
     } else {
       setOpen(false);
       setAmount("");
-      router.refresh(); // 刷新页面显示新余额
+      setCurrency("NZD");
+      router.refresh();
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm">
           <CreditCard className="h-4 w-4" />
@@ -50,9 +57,7 @@ export default function TopUpButton({ studentId }: { studentId: string }) {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-right">
-              充值数量 (Hours to add)
-            </Label>
+            <Label htmlFor="amount">充值数量 (Hours to add)</Label>
             <div className="relative">
               <Input
                 id="amount"
@@ -60,12 +65,25 @@ export default function TopUpButton({ studentId }: { studentId: string }) {
                 placeholder="例如: 10"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="col-span-3 h-12 text-lg font-bold pr-12"
+                className="h-12 text-lg font-bold pr-12"
               />
               <span className="absolute right-4 top-3 text-slate-400 font-bold text-sm">Hrs</span>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>币种 (Currency)</Label>
+            <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="text-[10px] text-slate-500">
-              * 这将直接增加学员的可用课时余额，不涉及现金流记录。
+              课时余额与币种无关；币种仅决定对应财务流水进入 NZD 或 RMB 轨道。
             </p>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency";
 import { Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,11 @@ export default function EditStudentButton({ student }: { student: any }) {
   const router = useRouter();
 
   const handleOpen = () => {
-    setData({ ...student, targetBalance: Number(student.balance) });
+    setData({
+      ...student,
+      targetBalance: Number(student.balance),
+      currency: student.currency || "NZD",
+    });
     setOpen(true);
   };
 
@@ -34,6 +39,7 @@ export default function EditStudentButton({ student }: { student: any }) {
       teacher: data.teacher,
       targetBalance: Number(data.targetBalance),
       paymentType: data.payment_type,
+      currency: data.currency || "NZD",
     });
     setLoading(false);
 
@@ -45,6 +51,8 @@ export default function EditStudentButton({ student }: { student: any }) {
       router.refresh();
     }
   };
+
+  const rateCurrency = (data.currency || "NZD") as Currency;
 
   return (
     <>
@@ -86,8 +94,33 @@ export default function EditStudentButton({ student }: { student: any }) {
              </div>
              <div className="grid grid-cols-2 gap-4">
                <div className="space-y-2">
-                 <Label>费率 ($/h)</Label>
-                 <Input type="number" value={data.hourly_rate} onChange={(e) => setData({...data, hourly_rate: e.target.value})} />
+                 <Label>课时费率</Label>
+                 <div className="flex gap-2">
+                   <div className="relative flex-1">
+                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                       {currencySymbol(rateCurrency)}
+                     </span>
+                     <Input
+                       type="number"
+                       value={data.hourly_rate}
+                       onChange={(e) => setData({...data, hourly_rate: e.target.value})}
+                       className="pl-7"
+                     />
+                   </div>
+                   <Select
+                     value={rateCurrency}
+                     onValueChange={(val) => setData({ ...data, currency: val })}
+                   >
+                     <SelectTrigger className="w-[110px] shrink-0 text-xs font-bold">
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {CURRENCY_OPTIONS.map((c) => (
+                         <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
                </div>
                <div className="space-y-2">
                  <Label>老师</Label>

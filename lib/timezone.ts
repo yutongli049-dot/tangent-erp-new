@@ -1,4 +1,4 @@
-import { addDays, addMonths, isSameDay, type Locale } from "date-fns";
+import { addDays, isSameDay, type Locale } from "date-fns";
 import { fromZonedTime, formatInTimeZone, toZonedTime } from "date-fns-tz";
 
 export const TZ_NZ = "Pacific/Auckland";
@@ -24,24 +24,38 @@ export function utcToNzTimeStr(utcIso: string): string {
   return formatInTimeZone(new Date(utcIso), TZ_NZ, "HH:mm");
 }
 
-/** 新西兰日历日加减（避免服务器本地时区污染） */
+/**
+ * 新西兰日历日加减（纯日历算术，避免 toZonedTime + formatInTimeZone 双重偏移）
+ * 旧实现会把「墙钟 Date」再当 UTC 格式化，导致 NZ 夏季整日 +1（如 8.12 → 8.13）。
+ */
 export function addCalendarDaysInNZ(dateStr: string, days: number): string {
-  const anchor = fromZonedTime(`${dateStr} 12:00:00`, TZ_NZ);
-  const zoned = toZonedTime(anchor, TZ_NZ);
-  return formatInTimeZone(addDays(zoned, days), TZ_NZ, "yyyy-MM-dd");
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // UTC 正午锚点：仅作公历加减，不经过系统本地时区
+  const utc = new Date(Date.UTC(y, m - 1, d + days, 12, 0, 0));
+  const yy = utc.getUTCFullYear();
+  const mm = String(utc.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(utc.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
 }
 
 /** 新西兰日历月加减（每月重复排课） */
 export function addCalendarMonthsInNZ(dateStr: string, months: number): string {
-  const anchor = fromZonedTime(`${dateStr} 12:00:00`, TZ_NZ);
-  const zoned = toZonedTime(anchor, TZ_NZ);
-  return formatInTimeZone(addMonths(zoned, months), TZ_NZ, "yyyy-MM-dd");
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const utc = new Date(Date.UTC(y, m - 1 + months, d, 12, 0, 0));
+  // 处理月末溢出（如 1/31 + 1 月）：钳制到目标月最后一天
+  if (utc.getUTCDate() !== d) {
+    utc.setUTCDate(0);
+  }
+  const yy = utc.getUTCFullYear();
+  const mm = String(utc.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(utc.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
 }
 
-/** 新西兰星期几 0=周日 … 6=周六 */
+/** 新西兰星期几 0=周日 … 6=周六（公历日无歧义，用 UTC 正午取 weekday） */
 export function getDayOfWeekInNZ(dateStr: string): number {
-  const anchor = fromZonedTime(`${dateStr} 12:00:00`, TZ_NZ);
-  return toZonedTime(anchor, TZ_NZ).getDay();
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay();
 }
 
 /** 新西兰当日结束时刻的 UTC Date（用于循环排课截止比较） */

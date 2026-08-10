@@ -87,7 +87,8 @@ export default function Home() {
   const [businessList, setBusinessList] = useState<any[]>([]); 
   
   const [stats, setStats] = useState<any>({
-    cashIncome: 0, netCashFlow: 0, realizedRevenue: 0, unearnedRevenue: 0,
+    cashIncome: 0, netCashFlow: 0, cashIncomeRmb: 0, netCashFlowRmb: 0,
+    realizedRevenue: 0, unearnedRevenue: 0,
     chartData: [], calendarBookings: [], lowBalanceStudents: []
   });
   
@@ -158,16 +159,16 @@ export default function Home() {
 
   const studentUsage: Record<string, number> = {};
   const futureBookings = rawFutureBookings.map((b: any) => {
-    const sid = b.student_id;
+    const sid = b.student_id || b.student?.id;
     if (!studentUsage[sid]) studentUsage[sid] = 0;
     
     const balance = Number(b.student?.balance || 0);
     const paymentType = b.student?.payment_type;
     const newUsage = studentUsage[sid] + Number(b.duration);
-    
-    const isUnpaid = isBookingUnpaid(balance, paymentType, newUsage);
-    
     studentUsage[sid] = newUsage;
+
+    // 仅按缴费类型 + 余额判定；balance > 0 绝不标「待缴费」
+    const isUnpaid = isBookingUnpaid(balance, paymentType);
     
     return { ...b, isUnpaid };
   });
@@ -236,6 +237,9 @@ export default function Home() {
                        {stats.netCashFlow >= 0 ? '+' : ''}${stats.netCashFlow.toLocaleString()}
                        <ArrowUpRight className="h-5 w-5 opacity-50" />
                      </h2>
+                     <p className="text-indigo-200/80 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                       RMB: ¥{(stats.netCashFlowRmb ?? 0).toLocaleString()}
+                     </p>
                    </div>
                    <div className="absolute bottom-0 left-0 right-0 h-24 w-full opacity-30 pointer-events-none z-0">
                      {mounted && stats.chartData.length > 0 && (
@@ -261,6 +265,9 @@ export default function Home() {
                        ${stats.realizedRevenue.toLocaleString()}
                        <ArrowUpRight className="h-5 w-5 text-slate-300" />
                      </h2>
+                     <p className="text-slate-400 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                       RMB: ¥{(stats.cashIncomeRmb ?? 0).toLocaleString()}
+                     </p>
                    </div>
                    <div className="z-10 mt-auto">
                       <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">点击查看排课</span>
@@ -279,6 +286,9 @@ export default function Home() {
                        ${stats.unearnedRevenue.toLocaleString()}
                        <ArrowUpRight className="h-5 w-5 opacity-50" />
                      </h2>
+                     <p className="text-slate-500 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                       RMB: ¥0
+                     </p>
                    </div>
                    <div className="text-xs text-slate-600 font-medium z-10">* 预收学费总额</div>
                 </div>
@@ -297,6 +307,9 @@ export default function Home() {
                      <div className="z-10 relative">
                        <p className="text-indigo-200 text-xs font-bold uppercase">净现金流 (Net)</p>
                        <h2 className="text-4xl font-black mt-2 flex items-center gap-2">${stats.netCashFlow.toLocaleString()} <ArrowUpRight className="h-5 w-5 opacity-50"/></h2>
+                       <p className="text-indigo-200/80 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                         RMB: ¥{(stats.netCashFlowRmb ?? 0).toLocaleString()}
+                       </p>
                      </div>
                      <div className="absolute bottom-0 left-0 right-0 h-24 w-full opacity-30 group-hover:opacity-40 transition-opacity pointer-events-none">
                         {mounted && <ResponsiveContainer width="100%" height="100%"><AreaChart data={stats.chartData}><defs><linearGradient id="colorNetDesktop" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#fff" stopOpacity={0.5}/><stop offset="95%" stopColor="#fff" stopOpacity={0}/></linearGradient></defs><Area type="monotone" dataKey="net" stroke="#fff" strokeWidth={3} fill="url(#colorNetDesktop)" isAnimationActive={false} /></AreaChart></ResponsiveContainer>}
@@ -305,13 +318,25 @@ export default function Home() {
                </Link>
                <Link href="/bookings" className="block hover:scale-[1.02] transition-transform">
                   <div className="h-48 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-indigo-300 hover:shadow-md transition-all">
-                     <div><p className="text-slate-500 text-xs font-bold uppercase">本月已消课</p><h2 className="text-4xl font-black mt-2 text-slate-900">${stats.realizedRevenue.toLocaleString()}</h2></div>
+                     <div>
+                       <p className="text-slate-500 text-xs font-bold uppercase">本月已消课</p>
+                       <h2 className="text-4xl font-black mt-2 text-slate-900">${stats.realizedRevenue.toLocaleString()}</h2>
+                       <p className="text-slate-400 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                         RMB: ¥{(stats.cashIncomeRmb ?? 0).toLocaleString()}
+                       </p>
+                     </div>
                      <div className="text-right"><div className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center ml-auto"><ArrowUpRight className="h-5 w-5 text-slate-400"/></div></div>
                   </div>
                </Link>
                <Link href="/students" className="block hover:scale-[1.02] transition-transform">
                   <div className="h-48 rounded-3xl bg-slate-900 p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
-                     <div><p className="text-slate-500 text-xs font-bold uppercase">资金池 (负债)</p><h2 className="text-4xl font-black mt-2">${stats.unearnedRevenue.toLocaleString()}</h2></div>
+                     <div>
+                       <p className="text-slate-500 text-xs font-bold uppercase">资金池 (负债)</p>
+                       <h2 className="text-4xl font-black mt-2">${stats.unearnedRevenue.toLocaleString()}</h2>
+                       <p className="text-slate-500 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
+                         RMB: ¥0
+                       </p>
+                     </div>
                      <div className="text-right"><div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center ml-auto"><ArrowUpRight className="h-5 w-5 text-slate-400"/></div></div>
                   </div>
                </Link>

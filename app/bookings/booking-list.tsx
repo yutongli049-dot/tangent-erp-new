@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import { useBusiness } from "@/contexts/BusinessContext";
-import { completeBooking, cancelBooking, deleteBooking, updateBooking } from "./actions";
+import { completeBooking, cancelBooking, deleteBooking, updateBooking, type BookingScope } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   MapPin, Loader2, Trash2, Pencil, Check, 
-  Calendar as CalendarIcon, BookOpen, FileText // ✅ 引入 FileText 图标
+  Calendar as CalendarIcon, BookOpen, FileText
 } from "lucide-react";
 import { isPast } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { InvoiceModal } from "@/components/InvoiceModal";
 import { DualTimezoneTime, DualTimezonePreview } from "@/components/DualTimezoneTime";
+import { toast } from "sonner";
 import {
   isTodayInNZ,
   isTomorrowInNZ,
@@ -32,24 +34,29 @@ type Booking = {
   duration: number;
   status: string;
   location: string | null;
-  // ✅ 确保这里包含 hourly_rate 和 student_code
   student: { id: string; name: string; teacher: string | null; subject: string | null; hourly_rate?: number; student_code?: string; } | null;
   business_unit_id: string;
 };
+
+type ScopeDialogState =
+  | { mode: "cancel"; booking: Booking }
+  | { mode: "update"; booking: Booking }
+  | null;
 
 export function BookingList({ bookings }: { bookings: Booking[] }) {
   const { currentBusinessId } = useBusiness();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
 
-  // 编辑相关
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editDuration, setEditDuration] = useState("1");
   const [editLocation, setEditLocation] = useState("");
 
-  // ✅ 新增：发票状态
+  const [scopeDialog, setScopeDialog] = useState<ScopeDialogState>(null);
+  const [scopeChoice, setScopeChoice] = useState<BookingScope>("single");
+
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
 
@@ -75,21 +82,65 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     groupedBookings[dateKey].push(b);
   });
 
-  // Actions
   const handleComplete = async (b: Booking) => {
     if (!confirm(`确认完成 ${b.student?.name} 的课程？`)) return;
     setLoadingId(b.id);
     if (b.student?.id) await completeBooking(b.id, b.student.id, b.duration);
     setLoadingId(null);
   };
-  const handleCancel = async (id: string) => {
-    if (!confirm("确定取消这个预约吗？")) return;
-    setLoadingId(id); await cancelBooking(id); setLoadingId(null);
+
+  const requestCancel = (b: Booking) => {
+    setScopeChoice("single");
+    setScopeDialog({ mode: "cancel", booking: b });
   };
+
+  const requestSaveEdit = () => {
+    if (!editingBooking) return;
+    setScopeChoice("single");
+    setScopeDialog({ mode: "update", booking: editingBooking });
+  };
+
+  const confirmScopeAction = async () => {
+    if (!scopeDialog) return;
+    const { mode, booking } = scopeDialog;
+    setLoadingId(booking.id);
+
+    if (mode === "cancel") {
+      const res = await cancelBooking(booking.id, scopeChoice);
+      if (res?.error) toast.error(res.error);
+      else {
+        const n = (res as any)?.cancelledCount || 1;
+        toast.success(n > 1 ? `已取消 ${n} 节课程` : "课程已取消");
+        if (editingBooking?.id === booking.id) setEditingBooking(null);
+      }
+    } else {
+      const res = await updateBooking(
+        booking.id,
+        {
+          date: editDate,
+          time: editTime,
+          duration: Number(editDuration),
+          location: editLocation,
+        },
+        scopeChoice
+      );
+      if (res?.error) toast.error(res.error);
+      else {
+        const n = (res as any)?.updatedCount || 1;
+        toast.success(n > 1 ? `已更新 ${n} 节课程` : "课程已更新");
+        setEditingBooking(null);
+      }
+    }
+
+    setLoadingId(null);
+    setScopeDialog(null);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("彻底删除记录？")) return;
     setLoadingId(id); await deleteBooking(id); setLoadingId(null);
   };
+
   const openEdit = (b: Booking) => {
     setEditingBooking(b);
     setEditDate(utcToNzDateStr(b.start_time));
@@ -97,20 +148,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     setEditDuration(b.duration.toString());
     setEditLocation(b.location || "");
   };
-  const saveEdit = async () => {
-    if (!editingBooking) return;
-    setLoadingId(editingBooking.id);
-    await updateBooking(editingBooking.id, {
-      date: editDate,
-      time: editTime,
-      duration: Number(editDuration),
-      location: editLocation,
-    });
-    setEditingBooking(null);
-    setLoadingId(null);
-  };
 
-  // Avatar
   const Avatar = ({ name }: { name: string }) => {
     const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${name}&backgroundColor=e5e7eb,d1d5db,9ca3af`;
     return (
@@ -122,8 +160,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
   return (
     <div className="space-y-6">
-      
-      {/* Tab Switcher */}
       <div className="bg-slate-100 p-1 rounded-xl flex items-center relative">
         <button 
           onClick={() => setActiveTab('upcoming')}
@@ -143,7 +179,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
         </button>
       </div>
 
-      {/* List */}
       {Object.keys(groupedBookings).length === 0 ? (
         <div className="text-center py-20">
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 text-slate-300 mb-4">
@@ -206,7 +241,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
                               <div className="flex items-center gap-2">
                                 {activeTab === 'upcoming' ? (
-                                  // 待办 Tab：编辑 & 完成
                                   <>
                                     <button onClick={() => openEdit(b)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
                                       <Pencil className="h-4 w-4" />
@@ -217,9 +251,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                                     </button>
                                   </>
                                 ) : (
-                                  // 历史 Tab：状态 & 单据 & 删除
                                   <div className="flex items-center gap-2">
-                                     {/* ✅ 这里的 Invoice 按钮 */}
                                      {b.status === 'completed' && (
                                        <Button 
                                          size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 border-indigo-100 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
@@ -249,7 +281,6 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
         })
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={!!editingBooking} onOpenChange={(open) => !open && setEditingBooking(null)}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader><DialogTitle>编辑课程</DialogTitle></DialogHeader>
@@ -276,24 +307,68 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
               <Input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} className="col-span-3 h-9" />
             </div>
             <div className="flex justify-center pt-2">
-               <button onClick={() => { if(editingBooking) handleCancel(editingBooking.id); setEditingBooking(null); }} className="text-xs text-rose-500 hover:underline">
+               <button onClick={() => { if (editingBooking) requestCancel(editingBooking); }} className="text-xs text-rose-500 hover:underline">
                  取消该预约
                </button>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={saveEdit} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold">保存修改</Button>
+            <Button onClick={requestSaveEdit} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold">保存修改</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ✅ 发票组件挂载 */}
+      {/* 批量范围：仅此节 / 此节及后续 */}
+      <Dialog open={!!scopeDialog} onOpenChange={(open) => !open && setScopeDialog(null)}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {scopeDialog?.mode === "cancel" ? "取消课程范围" : "修改课程范围"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 pt-1">
+              该课程可能属于循环排课系列。请选择操作范围：
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup
+            value={scopeChoice}
+            onValueChange={(v) => setScopeChoice(v as BookingScope)}
+            className="gap-3 py-2"
+          >
+            <label className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${scopeChoice === "single" ? "border-indigo-300 bg-indigo-50/50" : "border-slate-200"}`}>
+              <RadioGroupItem value="single" id="scope-single" className="mt-0.5" />
+              <div>
+                <div className="text-sm font-bold text-slate-800">仅操作此课程</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">只影响当前这一节课</div>
+              </div>
+            </label>
+            <label className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${scopeChoice === "following" ? "border-indigo-300 bg-indigo-50/50" : "border-slate-200"}`}>
+              <RadioGroupItem value="following" id="scope-following" className="mt-0.5" />
+              <div>
+                <div className="text-sm font-bold text-slate-800">操作此课程及后续所有课程</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  同学员、同时长、同地点，且开始时间 ≥ 本节的全部未完成排课
+                </div>
+              </div>
+            </label>
+          </RadioGroup>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setScopeDialog(null)} className="rounded-xl">返回</Button>
+            <Button
+              onClick={confirmScopeAction}
+              disabled={!!loadingId}
+              className={`rounded-xl font-bold ${scopeDialog?.mode === "cancel" ? "bg-rose-600 hover:bg-rose-700" : "bg-indigo-600 hover:bg-indigo-700"}`}
+            >
+              {loadingId ? <Loader2 className="animate-spin h-4 w-4" /> : (scopeDialog?.mode === "cancel" ? "确认取消" : "确认修改")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <InvoiceModal 
         booking={invoiceBooking} 
         open={invoiceOpen} 
         onOpenChange={setInvoiceOpen} 
       />
-
     </div>
   );
 }

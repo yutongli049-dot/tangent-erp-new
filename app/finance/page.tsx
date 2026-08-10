@@ -25,6 +25,7 @@ import {
 } from 'recharts';
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { currencySymbol, formatMoney, normalizeCurrency, type Currency, CURRENCY_OPTIONS } from "@/lib/currency";
 
 export default function FinancePage() {
   const { currentBusinessId } = useBusiness();
@@ -32,6 +33,10 @@ export default function FinancePage() {
   const [range, setRange] = useState("month"); 
   const [data, setData] = useState<any>({
     income: 0, expense: 0, net: 0, realized: 0,
+    byCurrency: {
+      NZD: { income: 0, expense: 0, net: 0 },
+      RMB: { income: 0, expense: 0, net: 0 },
+    },
     transactions: [], chartData: []
   });
 
@@ -44,7 +49,8 @@ export default function FinancePage() {
     category: "",
     date: "",
     description: "",
-    type: "expense"
+    type: "expense",
+    currency: "NZD" as Currency,
   });
 
   // 分类选项 (与 Add Page 保持一致)
@@ -98,9 +104,10 @@ export default function FinancePage() {
     setEditForm({
       amount: String(tx.amount),
       category: tx.category || "",
-      date: tx.transaction_date.split('T')[0], // 提取 YYYY-MM-DD
+      date: tx.transaction_date.split('T')[0],
       description: tx.description || "",
-      type: tx.type
+      type: tx.type,
+      currency: normalizeCurrency(tx.currency),
     });
   };
 
@@ -114,7 +121,8 @@ export default function FinancePage() {
       category: editForm.category,
       description: editForm.description,
       date: editForm.date,
-      type: editForm.type
+      type: editForm.type,
+      currency: editForm.currency,
     });
 
     setEditLoading(false);
@@ -179,30 +187,47 @@ export default function FinancePage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards — NZD / RMB 独立轨道 */}
         <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-4 md:gap-6 no-scrollbar snap-x snap-mandatory">
-          {/* ... Cards code remains same ... */}
-          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-emerald-100 bg-emerald-50/50 shadow-sm flex flex-col justify-between h-32 md:h-auto">
+          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-emerald-100 bg-emerald-50/50 shadow-sm flex flex-col justify-between h-auto">
              <div className="flex justify-between items-start">
-               <div><p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">现金收入 (In)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${data.income.toLocaleString()}</h2></div>
+               <div>
+                 <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">现金收入 (In)</p>
+                 <h2 className="text-3xl font-black text-slate-900 mt-2">${(data.byCurrency?.NZD?.income ?? data.income).toLocaleString()}</h2>
+                 <p className="text-sm font-bold text-emerald-700/80 mt-1 tabular-nums">¥{(data.byCurrency?.RMB?.income ?? 0).toLocaleString()} <span className="text-[10px] font-medium text-emerald-600/70">RMB</span></p>
+               </div>
                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600"><ArrowDownRight className="h-5 w-5" /></div>
              </div>
           </Card>
-          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-rose-100 bg-rose-50/50 shadow-sm flex flex-col justify-between h-32 md:h-auto">
+          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-rose-100 bg-rose-50/50 shadow-sm flex flex-col justify-between h-auto">
              <div className="flex justify-between items-start">
-               <div><p className="text-xs font-bold text-rose-600 uppercase tracking-wider">现金支出 (Out)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${data.expense.toLocaleString()}</h2></div>
+               <div>
+                 <p className="text-xs font-bold text-rose-600 uppercase tracking-wider">现金支出 (Out)</p>
+                 <h2 className="text-3xl font-black text-slate-900 mt-2">${(data.byCurrency?.NZD?.expense ?? data.expense).toLocaleString()}</h2>
+                 <p className="text-sm font-bold text-rose-700/80 mt-1 tabular-nums">¥{(data.byCurrency?.RMB?.expense ?? 0).toLocaleString()} <span className="text-[10px] font-medium text-rose-600/70">RMB</span></p>
+               </div>
                <div className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600"><ArrowUpRight className="h-5 w-5" /></div>
              </div>
           </Card>
-          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-indigo-100 bg-indigo-50/50 shadow-sm flex flex-col justify-between h-32 md:h-auto">
+          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-indigo-100 bg-indigo-50/50 shadow-sm flex flex-col justify-between h-auto">
              <div className="flex justify-between items-start">
-               <div><p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">净现金流 (Net)</p><h2 className={`text-3xl font-black mt-2 ${data.net >= 0 ? 'text-indigo-700' : 'text-rose-600'}`}>{data.net >= 0 ? '+' : ''}${data.net.toLocaleString()}</h2></div>
+               <div>
+                 <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">净现金流 (Net)</p>
+                 <h2 className={`text-3xl font-black mt-2 ${(data.byCurrency?.NZD?.net ?? data.net) >= 0 ? 'text-indigo-700' : 'text-rose-600'}`}>
+                   {(data.byCurrency?.NZD?.net ?? data.net) >= 0 ? '+' : ''}${(data.byCurrency?.NZD?.net ?? data.net).toLocaleString()}
+                 </h2>
+                 <p className={`text-sm font-bold mt-1 tabular-nums ${(data.byCurrency?.RMB?.net ?? 0) >= 0 ? 'text-indigo-700/80' : 'text-rose-600/80'}`}>
+                   {(data.byCurrency?.RMB?.net ?? 0) >= 0 ? '+' : ''}¥{Math.abs(data.byCurrency?.RMB?.net ?? 0).toLocaleString()} <span className="text-[10px] font-medium opacity-70">RMB</span>
+                 </p>
+               </div>
                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Wallet className="h-5 w-5" /></div>
              </div>
           </Card>
-          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-amber-100 bg-amber-50/50 shadow-sm flex flex-col justify-between h-32 md:h-auto">
+          <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-amber-100 bg-amber-50/50 shadow-sm flex flex-col justify-between h-auto">
              <div className="flex justify-between items-start">
-               <div><p className="text-xs font-bold text-amber-600 uppercase tracking-wider">消课产值 (Realized)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${data.realized.toLocaleString()}</h2></div>
+               <div><p className="text-xs font-bold text-amber-600 uppercase tracking-wider">消课产值 (Realized)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${data.realized.toLocaleString()}</h2>
+               <p className="text-[10px] text-amber-600/70 mt-1 font-medium">按 NZD 课时费率推算</p>
+               </div>
                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><TrendingUp className="h-5 w-5" /></div>
              </div>
           </Card>
@@ -277,7 +302,7 @@ export default function FinancePage() {
                       <div className={`text-base font-black font-mono whitespace-nowrap ${
                         t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'
                       }`}>
-                        {t.type === 'income' ? '+' : '-'}${Number(t.amount).toLocaleString()}
+                        {t.type === 'income' ? '+' : '-'}{formatMoney(Number(t.amount), t.currency)}
                       </div>
                       
                       {/* 操作菜单 */}
@@ -322,8 +347,24 @@ export default function FinancePage() {
                  </Select>
                </div>
                <div className="grid grid-cols-4 items-center gap-4">
+                 <Label className="text-right">币种</Label>
+                 <Select value={editForm.currency} onValueChange={(val) => setEditForm({...editForm, currency: val as Currency})}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="币种" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCY_OPTIONS.map(c => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                 </Select>
+               </div>
+               <div className="grid grid-cols-4 items-center gap-4">
                  <Label className="text-right">金额</Label>
-                 <Input type="number" step="0.01" value={editForm.amount} onChange={(e) => setEditForm({...editForm, amount: e.target.value})} className="col-span-3" />
+                 <div className="col-span-3 relative">
+                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currencySymbol(editForm.currency)}</span>
+                   <Input type="number" step="0.01" value={editForm.amount} onChange={(e) => setEditForm({...editForm, amount: e.target.value})} className="pl-7" />
+                 </div>
                </div>
                <div className="grid grid-cols-4 items-center gap-4">
                  <Label className="text-right">分类</Label>

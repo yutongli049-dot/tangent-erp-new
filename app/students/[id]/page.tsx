@@ -16,6 +16,7 @@ import TopUpButton from "./top-up-button";
 import EditStudentButton from "./edit-button";
 import { getStudentHistory } from "../actions";
 import { isPaymentAlert, getPaymentTypeLabel } from "@/lib/student-payment";
+import { currencySymbol, formatMoney } from "@/lib/currency";
 
 // 底部导航 (保持一致)
 const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
@@ -105,13 +106,18 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">当前费率</span>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-indigo-600">${student.hourly_rate}</span>
+                    <span className="text-3xl font-black text-indigo-600">
+                      {currencySymbol(student.currency)}{student.hourly_rate}
+                    </span>
                     <span className="text-sm font-bold text-indigo-400">/hr</span>
                   </div>
+                  <p className="text-[10px] text-indigo-300 font-medium mt-1">
+                    {student.currency === "RMB" ? "RMB" : "NZD"}
+                  </p>
                </div>
             </div>
 
-            <div className="mt-4"><TopUpButton studentId={student.id} /></div>
+            <div className="mt-4"><TopUpButton studentId={student.id} defaultCurrency={student.currency || "NZD"} /></div>
           </div>
         </div>
 
@@ -173,7 +179,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                     </div>
                   </div>
                   <div className={`text-sm font-black font-mono ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                    {t.type === 'income' ? '+' : '-'}${t.amount}
+                    {t.type === 'income' ? '+' : '-'}{formatMoney(Number(t.amount), t.currency)}
                   </div>
                 </Card>
               ))

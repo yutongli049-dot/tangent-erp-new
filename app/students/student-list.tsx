@@ -12,12 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Trash2, Loader2, User, BookOpen, Pencil, 
-  Search, Coins, MoreHorizontal, CalendarClock, ArchiveX, 
-  ChevronDown, ChevronUp, GraduationCap, Filter, SortAsc, SortDesc, Info
+  Search, Coins, MoreHorizontal, ArchiveX, 
+  ChevronDown, ChevronUp, GraduationCap, SortAsc, SortDesc, Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PAYMENT_TYPE_OPTIONS, isPaymentAlert } from "@/lib/student-payment";
+import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency";
 
 export function StudentList({ students }: { students: any[] }) {
   const { currentBusinessId } = useBusiness();
@@ -34,6 +35,7 @@ export function StudentList({ students }: { students: any[] }) {
   const [editLoading, setEditLoading] = useState(false);
   const [topUpTarget, setTopUpTarget] = useState<any>(null);
   const [topUpAmount, setTopUpAmount] = useState("10");
+  const [topUpCurrency, setTopUpCurrency] = useState<"NZD" | "RMB">("NZD");
   const [showInactive, setShowInactive] = useState(false);
 
   // --- 动态提取筛选选项 ---
@@ -108,11 +110,12 @@ export function StudentList({ students }: { students: any[] }) {
 
   // (API调用逻辑保持不变: handleDelete, handleSaveEdit, handleTopUp, Avatar...)
   const handleDelete = async (id: string) => {
-    if (!confirm("确定删除该学员吗？这将同时删除其历史记录。")) return;
+    if (!confirm("确定删除该学员吗？这将同时删除其未完成排课；财务流水会保留。")) return;
     setLoadingId(id);
-    await deleteStudent(id);
+    const res = await deleteStudent(id);
     setLoadingId(null);
-    toast.success("学员已删除");
+    if (res?.error) toast.error("删除失败: " + res.error);
+    else toast.success("学员已删除");
   };
 
   const handleSaveEdit = async () => {
@@ -127,6 +130,7 @@ export function StudentList({ students }: { students: any[] }) {
       teacher: editingStudent.teacher,
       targetBalance: Number(editingStudent.targetBalance),
       paymentType: editingStudent.payment_type,
+      currency: editingStudent.currency || "NZD",
     });
     setEditLoading(false);
     if (res?.error) toast.error("更新失败: " + res.error);
@@ -137,12 +141,13 @@ export function StudentList({ students }: { students: any[] }) {
     if (!topUpTarget) return;
     setLoadingId(topUpTarget.id);
     const amount = Number(topUpAmount);
-    const res = await topUpStudent(topUpTarget.id, amount);
+    const res = await topUpStudent(topUpTarget.id, amount, topUpCurrency);
     setLoadingId(null);
     if (res?.error) toast.error(res.error);
     else {
       toast.success(`充值成功！当前余额: ${Number(topUpTarget.balance) + amount}`);
       setTopUpTarget(null);
+      setTopUpCurrency("NZD");
     }
   };
 
@@ -164,7 +169,7 @@ export function StudentList({ students }: { students: any[] }) {
         .reduce((sum: number, b: any) => sum + Number(b.duration), 0);
       const unscheduledHours = Number((totalBalance - scheduledHours).toFixed(1));
       const paymentAlert = isPaymentAlert(totalBalance, student.payment_type);
-      const isNegativeUnscheduled = unscheduledHours < 0;
+      const isOverScheduled = unscheduledHours < 0;
 
       return (
         <div key={student.id} className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 hover:shadow-md transition-all gap-4">
@@ -182,6 +187,9 @@ export function StudentList({ students }: { students: any[] }) {
                  <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-slate-400"/> {student.level || "-"}</span>
                  <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5 text-slate-400"/> {student.subject || "-"}</span>
                  <span className="flex items-center gap-1"><User className="h-3.5 w-3.5 text-slate-400"/> {student.teacher || "-"}</span>
+                 <span className="flex items-center gap-1 font-mono text-slate-400">
+                   {currencySymbol(student.currency)}{student.hourly_rate || 0}/h
+                 </span>
               </div>
             </div>
           </Link>
@@ -189,23 +197,21 @@ export function StudentList({ students }: { students: any[] }) {
              <Link href={`/students/${student.id}`} className="flex items-center gap-4">
                 <div className="flex flex-col items-end"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">总课时</span><span className={`text-base font-black ${paymentAlert ? 'text-rose-600' : 'text-slate-700'}`}>{totalBalance}<span className="text-[10px] font-bold ml-0.5">h</span></span></div>
                 <div className="h-8 w-px bg-slate-200"></div>
-                <div className="flex flex-col items-end w-16">
-                   <span className={`text-[10px] font-bold uppercase tracking-wider ${isNegativeUnscheduled ? 'text-slate-300' : unscheduledHours > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>待排</span>
-                   <div className={`text-base font-black flex items-center gap-1 ${isNegativeUnscheduled ? 'text-slate-300' : unscheduledHours > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                     {unscheduledHours}<span className="text-[10px] font-bold">h</span>
-                     {isNegativeUnscheduled ? (
-                       <span title="包含未来周期预测排课" className="inline-flex"><Info className="h-3.5 w-3.5 ml-0.5 text-slate-300" /></span>
-                     ) : unscheduledHours > 0 ? (
-                       <CalendarClock className="h-3.5 w-3.5 ml-0.5" />
+                <div className="flex flex-col items-end min-w-[3.5rem]">
+                   <span className="text-[10px] font-medium tracking-wider text-slate-400">已预排</span>
+                   <div className="text-xs font-medium text-slate-400 flex items-center gap-0.5 tabular-nums">
+                     {scheduledHours}<span className="text-[10px]">h</span>
+                     {isOverScheduled ? (
+                       <span title="已预排超过剩余总课时" className="inline-flex"><Info className="h-3 w-3 ml-0.5 text-slate-300" /></span>
                      ) : null}
                    </div>
                 </div>
              </Link>
              <div className="flex items-center gap-1">
-                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1.5 rounded-lg" onClick={() => setTopUpTarget(student)}><Coins className="h-4 w-4" /> 充值</Button>
+                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 gap-1.5 rounded-lg" onClick={() => { setTopUpTarget(student); setTopUpCurrency((student.currency === "RMB" ? "RMB" : "NZD") as Currency); }}><Coins className="h-4 w-4" /> 充值</Button>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-slate-400 hover:text-slate-700"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="rounded-xl">
-                    <DropdownMenuItem onClick={() => setEditingStudent({ ...student, targetBalance: Number(student.balance) })}><Pencil className="mr-2 h-4 w-4" /> 编辑资料</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditingStudent({ ...student, targetBalance: Number(student.balance), currency: student.currency || "NZD" })}><Pencil className="mr-2 h-4 w-4" /> 编辑资料</DropdownMenuItem>
                     <DropdownMenuItem className="text-rose-600 focus:text-rose-600" onClick={() => handleDelete(student.id)}><Trash2 className="mr-2 h-4 w-4" /> 删除学员</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -306,7 +312,35 @@ export function StudentList({ students }: { students: any[] }) {
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">学号</Label><Input value={editingStudent.student_code || ""} onChange={(e) => setEditingStudent({...editingStudent, student_code: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">科目</Label><Input value={editingStudent.subject || ""} onChange={(e) => setEditingStudent({...editingStudent, subject: e.target.value})} className="col-span-3 h-9" /></div>
               <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">老师</Label><Input value={editingStudent.teacher || ""} onChange={(e) => setEditingStudent({...editingStudent, teacher: e.target.value})} className="col-span-3 h-9" /></div>
-              <div className="grid grid-cols-4 items-center gap-4"><Label className="text-right text-xs text-slate-500">费率</Label><div className="col-span-3 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span><Input type="number" value={editingStudent.hourly_rate} onChange={(e) => setEditingStudent({...editingStudent, hourly_rate: e.target.value})} className="pl-6 h-9" /></div></div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right text-xs text-slate-500">费率</Label>
+                <div className="col-span-3 flex gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                      {currencySymbol(editingStudent.currency || "NZD")}
+                    </span>
+                    <Input
+                      type="number"
+                      value={editingStudent.hourly_rate}
+                      onChange={(e) => setEditingStudent({...editingStudent, hourly_rate: e.target.value})}
+                      className="pl-6 h-9"
+                    />
+                  </div>
+                  <Select
+                    value={editingStudent.currency || "NZD"}
+                    onValueChange={(val) => setEditingStudent({ ...editingStudent, currency: val })}
+                  >
+                    <SelectTrigger className="h-9 w-[110px] shrink-0 text-xs font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCY_OPTIONS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right text-xs text-slate-500">缴费类型</Label>
                 <div className="col-span-3">
@@ -344,7 +378,7 @@ export function StudentList({ students }: { students: any[] }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!topUpTarget} onOpenChange={(open) => !open && setTopUpTarget(null)}>
+      <Dialog open={!!topUpTarget} onOpenChange={(open) => { if (!open) { setTopUpTarget(null); setTopUpCurrency("NZD"); } }}>
         <DialogContent className="sm:max-w-[325px] rounded-3xl">
           <DialogHeader className="text-center"><DialogTitle className="text-xl">课时充值</DialogTitle><p className="text-xs text-slate-500">为 {topUpTarget?.name} 增加课时</p></DialogHeader>
           <div className="py-6 flex flex-col items-center gap-4">
@@ -354,6 +388,17 @@ export function StudentList({ students }: { students: any[] }) {
                 <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setTopUpAmount(String(Number((Number(topUpAmount) + 0.5).toFixed(1))))}>+</Button>
              </div>
              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">HOURS</p>
+             <div className="w-full space-y-2">
+               <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">币种 (Currency)</Label>
+               <Select value={topUpCurrency} onValueChange={(v) => setTopUpCurrency(v as Currency)}>
+                 <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
+                 <SelectContent>
+                   {CURRENCY_OPTIONS.map((c) => (
+                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
              <div className="grid grid-cols-3 gap-2 w-full mt-2">
                 {[5, 10, 20].map(amt => (<button key={amt} onClick={() => setTopUpAmount(String(amt))} className="bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 py-2 rounded-xl text-xs font-bold transition-colors">+{amt}</button>))}
              </div>

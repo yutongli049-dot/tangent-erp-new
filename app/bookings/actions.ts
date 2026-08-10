@@ -127,6 +127,49 @@ function parseCustomIntervalWeeks(formData: FormData): number {
   return Number.isFinite(n) && n >= 1 ? Math.min(n, 52) : 1;
 }
 
+export type BookingScope = "single" | "following";
+
+/** 同系列：同学员 + 同时长 + 同地点，且 start_time >= 本节 */
+async function findSeriesBookings(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  booking: {
+    id: string;
+    student_id: string | null;
+    start_time: string;
+    duration: number;
+    location: string | null;
+    status?: string;
+  },
+  scope: BookingScope
+) {
+  if (scope === "single" || !booking.student_id) {
+    return [booking];
+  }
+
+  let query = supabase
+    .from("bookings")
+    .select("id, student_id, start_time, end_time, duration, location, status")
+    .eq("student_id", booking.student_id)
+    .eq("status", "confirmed")
+    .eq("duration", booking.duration)
+    .gte("start_time", booking.start_time)
+    .order("start_time", { ascending: true });
+
+  if (booking.location == null || booking.location === "") {
+    query = query.is("location", null);
+  } else {
+    query = query.eq("location", booking.location);
+  }
+
+  const { data, error } = await query;
+  if (error) return [booking];
+  const list = data || [];
+  if (!list.some((b) => b.id === booking.id)) {
+    return [booking, ...list];
+  }
+  return list;
+}
+
 // 1. 创建预约 (教培)
 export async function createBooking(prevState: any, formData: FormData) {
   const supabase = await createClient();
@@ -181,24 +224,52 @@ export async function createBooking(prevState: any, formData: FormData) {
 }
 
 // 2. 更新预约 — 接收新西兰本地 date + time，存储 UTC
+// scope=following 时：对本节及后续同系列 confirmed 课施加相同时间偏移，并同步 duration/location
 export async function updateBooking(
   id: string,
-  data: { date: string; time: string; duration: number; location: string }
+  data: { date: string; time: string; duration: number; location: string },
+  scope: BookingScope = "single"
 ) {
   const supabase = await createClient();
-  const startDate = nzLocalToUtc(data.date, data.time);
-  const endDate = new Date(startDate.getTime() + durationToMs(data.duration));
 
-  const { error } = await supabase.from("bookings").update({
-    start_time: startDate.toISOString(),
-    end_time: endDate.toISOString(),
-    duration: data.duration,
-    location: data.location,
-  }).eq("id", id);
+  const { data: current, error: fetchError } = await supabase
+    .from("bookings")
+    .select("id, student_id, start_time, end_time, duration, location, status")
+    .eq("id", id)
+    .single();
 
-  if (error) return { error: error.message };
+  if (fetchError || !current) return { error: "Booking not found" };
+
+  const newStart = nzLocalToUtc(data.date, data.time);
+  const newEnd = new Date(newStart.getTime() + durationToMs(data.duration));
+  const deltaMs = newStart.getTime() - new Date(current.start_time).getTime();
+
+  const targets = await findSeriesBookings(supabase, current, scope);
+
+  for (const b of targets) {
+    if (b.id === id) {
+      const { error } = await supabase.from("bookings").update({
+        start_time: newStart.toISOString(),
+        end_time: newEnd.toISOString(),
+        duration: data.duration,
+        location: data.location,
+      }).eq("id", id);
+      if (error) return { error: error.message };
+    } else {
+      const shiftedStart = new Date(new Date(b.start_time).getTime() + deltaMs);
+      const shiftedEnd = new Date(shiftedStart.getTime() + durationToMs(data.duration));
+      const { error } = await supabase.from("bookings").update({
+        start_time: shiftedStart.toISOString(),
+        end_time: shiftedEnd.toISOString(),
+        duration: data.duration,
+        location: data.location,
+      }).eq("id", b.id);
+      if (error) return { error: error.message };
+    }
+  }
+
   revalidatePath("/bookings");
-  return { success: true };
+  return { success: true, updatedCount: targets.length };
 }
 
 // 3. 完成预约 — 仅扣课时，不写 income 流水（充值时已计现金收入；产值由 completed bookings 推算）
@@ -216,24 +287,41 @@ export async function completeBooking(id: string, studentId: string, duration: n
   return { success: true };
 }
 
-// 4. 取消预约
-export async function cancelBooking(id: string) {
+// 4. 取消预约 — scope=following 时批量取消本节及后续同系列 confirmed 课
+export async function cancelBooking(id: string, scope: BookingScope = "single") {
   const supabase = await createClient();
-  const { data: booking } = await supabase.from("bookings").select("status, student_id, duration").eq("id", id).single();
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, status, student_id, duration, start_time, location")
+    .eq("id", id)
+    .single();
   if (!booking) return { error: "Booking not found" };
 
-  if (booking.status === "completed" && booking.student_id) {
-    const balanceRes = await incrementStudentBalance(supabase, booking.student_id, Number(booking.duration));
-    if (balanceRes.error) return { error: balanceRes.error };
+  const targets = await findSeriesBookings(supabase, booking, scope);
+  const ids = targets.map((b) => b.id);
+
+  // 已完成课取消需回滚课时（通常不会出现在 following confirmed 集合里，但 single 可能）
+  for (const b of targets) {
+    if (b.status === "completed" && b.student_id) {
+      const balanceRes = await incrementStudentBalance(
+        supabase,
+        b.student_id,
+        Number(b.duration)
+      );
+      if (balanceRes.error) return { error: balanceRes.error };
+    }
   }
 
-  const { error } = await supabase.from("bookings").update({ status: "cancelled" }).eq("id", id);
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "cancelled" })
+    .in("id", ids);
   if (error) return { error: error.message };
 
   revalidatePath("/bookings");
   revalidatePath("/students");
   revalidatePath("/finance");
-  return { success: true };
+  return { success: true, cancelledCount: ids.length };
 }
 
 // 5. 删除预约

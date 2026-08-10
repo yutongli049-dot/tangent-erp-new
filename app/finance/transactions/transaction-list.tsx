@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, FileText, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import Link from "next/link";
+import { formatMoney, normalizeCurrency } from "@/lib/currency";
 
 type Transaction = {
   id: string;
@@ -17,6 +18,7 @@ type Transaction = {
   transaction_date: string;
   business_unit_id: string;
   proof_img_url: string | null;
+  currency?: string | null;
 };
 
 export function TransactionList({ initialTransactions }: { initialTransactions: Transaction[] }) {
@@ -80,7 +82,8 @@ export function TransactionList({ initialTransactions }: { initialTransactions: 
             <span className={`text-sm font-bold ${
               t.type === 'income' ? 'text-emerald-600' : 'text-slate-900'
             }`}>
-              {t.type === 'income' ? '+' : '-'}${Number(t.amount).toFixed(2)}
+              {t.type === 'income' ? '+' : '-'}{formatMoney(Number(t.amount), t.currency)}
+              <span className="text-[10px] text-slate-400 font-medium ml-1">{normalizeCurrency(t.currency)}</span>
             </span>
 
             {/* 删除按钮 */}

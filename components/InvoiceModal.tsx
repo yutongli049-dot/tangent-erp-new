@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { format } from "date-fns";
+import { currencySymbol } from "@/lib/currency";
 
 export function InvoiceModal({ booking, open, onOpenChange }: { booking: any, open: boolean, onOpenChange: (open: boolean) => void }) {
   if (!booking) return null;
@@ -12,6 +13,7 @@ export function InvoiceModal({ booking, open, onOpenChange }: { booking: any, op
   const student = booking.student || {};
   const rate = student.hourly_rate || 70; 
   const amount = booking.duration * rate;
+  const sym = currencySymbol(student.currency);
   const invoiceId = `INV-${format(date, "yyyyMMdd")}-${booking.id.slice(0, 4).toUpperCase()}`;
 
   const handlePrint = () => {
@@ -59,8 +61,8 @@ export function InvoiceModal({ booking, open, onOpenChange }: { booking: any, op
               </p>
             </td>
             <td className="py-4 border-b border-slate-50 text-right">{booking.duration}</td>
-            <td className="py-4 border-b border-slate-50 text-right">${rate}</td>
-            <td className="py-4 border-b border-slate-50 text-right font-bold text-slate-900">${amount}</td>
+            <td className="py-4 border-b border-slate-50 text-right">{sym}{rate}</td>
+            <td className="py-4 border-b border-slate-50 text-right font-bold text-slate-900">{sym}{amount}</td>
           </tr>
         </tbody>
       </table>
@@ -69,11 +71,11 @@ export function InvoiceModal({ booking, open, onOpenChange }: { booking: any, op
       <div className="flex justify-end mb-4">
         <div className="w-1/2">
           <div className="flex justify-between py-2 border-b border-slate-100 text-slate-500 text-sm">
-            <span>Subtotal</span><span>${amount}</span>
+            <span>Subtotal</span><span>{sym}{amount}</span>
           </div>
           <div className="flex justify-between py-3 text-lg">
             <span className="font-bold text-slate-900">Total</span>
-            <span className="font-black text-indigo-600">${amount}</span>
+            <span className="font-black text-indigo-600">{sym}{amount}</span>
           </div>
         </div>
       </div>

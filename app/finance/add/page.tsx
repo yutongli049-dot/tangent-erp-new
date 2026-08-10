@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Camera, Loader2, CheckCircle2, Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, User, Clock } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner"; 
+import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency"; 
 
 // 底部导航项
 const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
@@ -42,6 +43,7 @@ export default function AddTransactionPage() {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense"); 
   const [category, setCategory] = useState("");
+  const [currency, setCurrency] = useState<Currency>("NZD");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [description, setDescription] = useState("");
   const [proofUrl, setProofUrl] = useState("");
@@ -138,6 +140,7 @@ export default function AddTransactionPage() {
     formData.append("amount", amount);
     formData.append("type", type);
     formData.append("category", category);
+    formData.append("currency", currency);
     formData.append("date", date);
     formData.append("description", description);
     formData.append("businessId", currentBusinessId);
@@ -197,12 +200,24 @@ export default function AddTransactionPage() {
               </TabsList>
             </Tabs>
 
-            {/* Amount */}
+            {/* Amount + Currency */}
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider pl-1">金额 (Amount)</Label>
+              <div className="flex items-center justify-between pl-1">
+                <Label className="text-xs text-slate-400 font-bold uppercase tracking-wider">金额 (Amount)</Label>
+                <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+                  <SelectTrigger className="h-8 w-[120px] rounded-lg text-xs font-bold border-slate-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5">
-                  <span className={`text-3xl font-black ${type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>$</span>
+                  <span className={`text-3xl font-black ${type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>{currencySymbol(currency)}</span>
                 </div>
                 <Input
                   type="number"

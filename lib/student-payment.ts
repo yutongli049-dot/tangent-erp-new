@@ -16,32 +16,30 @@ export function getPaymentTypeLabel(type: string | null | undefined): string {
 }
 
 /**
- * 红灯 / 待续费判定
- * - single（一课一缴）：balance <= -1 才报警
- * - 其他预付费类型：balance <= 0 即报警
+ * 学员列表「欠费」红标 / 待续费侧栏
+ * 仅 balance < 0；balance === 0 视为正常
  */
 export function isPaymentAlert(
   balance: number,
-  paymentType: string | null | undefined
+  _paymentType?: string | null
 ): boolean {
-  const bal = Number(balance);
-  const type = paymentType || DEFAULT_PAYMENT_TYPE;
-  if (type === "single") return bal <= -1;
-  return bal <= 0;
+  return Number(balance) < 0;
 }
 
 /**
- * 待办课程「待缴费」标签判定
- * - single：仅当学员已欠费（balance <= -1）
- * - 预付费：累计待消课时超过余额，或余额已耗尽
+ * Dashboard 待办课程「待缴费」标签
+ * - single：仅 balance < 0
+ * - 其他预付费：balance <= 0
+ * - balance > 0：绝对不显示（禁止用累计待消课时误标）
  */
 export function isBookingUnpaid(
   balance: number,
   paymentType: string | null | undefined,
-  cumulativeUsage: number
+  _cumulativeUsage?: number
 ): boolean {
   const bal = Number(balance);
+  if (bal > 0) return false;
   const type = paymentType || DEFAULT_PAYMENT_TYPE;
-  if (type === "single") return bal <= -1;
-  return cumulativeUsage > bal || bal <= 0;
+  if (type === "single") return bal < 0;
+  return bal <= 0;
 }

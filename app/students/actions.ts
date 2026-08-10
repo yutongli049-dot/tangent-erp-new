@@ -10,6 +10,8 @@ import { incrementStudentBalance } from "@/lib/student-balance";
 
 import { roundHours } from "@/lib/utils";
 
+import { DEFAULT_CURRENCY, normalizeCurrency, type Currency } from "@/lib/currency";
+
 
 
 
@@ -46,6 +48,8 @@ export async function createStudent(prevState: any, formData: FormData) {
 
   const paymentType = (formData.get("paymentType") as string) || "monthly";
 
+  const currency = normalizeCurrency(formData.get("currency") as string);
+
 
 
   if (!name || !businessId) return { error: "姓名必填" };
@@ -71,6 +75,8 @@ export async function createStudent(prevState: any, formData: FormData) {
     balance: initialBalance,
 
     payment_type: paymentType,
+
+    currency,
 
     business_unit_id: businessId,
 
@@ -107,6 +113,8 @@ export async function createStudent(prevState: any, formData: FormData) {
       student_id: newStudent?.id,
 
       quantity: initialBalance,
+
+      currency,
 
     });
 
@@ -145,6 +153,8 @@ export async function updateStudent(id: string, data: {
   targetBalance?: number;
 
   paymentType?: string;
+
+  currency?: Currency | string;
 
 }) {
 
@@ -212,6 +222,8 @@ export async function updateStudent(id: string, data: {
 
         quantity: diff,
 
+        currency: DEFAULT_CURRENCY,
+
       });
 
     }
@@ -240,6 +252,8 @@ export async function updateStudent(id: string, data: {
 
       ...(data.paymentType !== undefined ? { payment_type: data.paymentType } : {}),
 
+      ...(data.currency !== undefined ? { currency: normalizeCurrency(data.currency) } : {}),
+
     })
 
     .eq("id", id);
@@ -264,17 +278,52 @@ export async function updateStudent(id: string, data: {
 
 
 
-// 3. 删除学员 (Delete)
+// 3. 删除学员 (Delete) — 先解除关联，避免外键约束失败
 
 export async function deleteStudent(studentId: string) {
 
   const supabase = await createClient();
 
+  // A. 清理排课：优先删除未完成；已完成课解除关联以保留课表痕迹（若列非空则整表删除该学员排课）
+  const { error: openBookingErr } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("student_id", studentId)
+    .neq("status", "completed");
+
+  if (openBookingErr) return { error: openBookingErr.message };
+
+  const { error: completedNullErr } = await supabase
+    .from("bookings")
+    .update({ student_id: null })
+    .eq("student_id", studentId);
+
+  if (completedNullErr) {
+    // student_id 若为 NOT NULL，则删除剩余排课
+    const { error: restDelErr } = await supabase
+      .from("bookings")
+      .delete()
+      .eq("student_id", studentId);
+    if (restDelErr) return { error: restDelErr.message };
+  }
+
+  // B. 保留财务历史：仅解除 transactions.student_id
+  const { error: txErr } = await supabase
+    .from("transactions")
+    .update({ student_id: null })
+    .eq("student_id", studentId);
+
+  if (txErr) return { error: txErr.message };
+
+  // C. 删除学员本体
   const { error } = await supabase.from("students").delete().eq("id", studentId);
 
   if (error) return { error: error.message };
 
   revalidatePath("/students");
+  revalidatePath("/bookings");
+  revalidatePath("/finance");
+  revalidatePath("/");
 
   return { success: true };
 
@@ -282,9 +331,13 @@ export async function deleteStudent(studentId: string) {
 
 
 
-// 4. 学员充值 (Top Up)
+// 4. 学员充值 (Top Up) — currency 仅影响对应流水轨道，课时余额与币种无关
 
-export async function topUpStudent(studentId: string, hoursToAdd: number) {
+export async function topUpStudent(
+  studentId: string,
+  hoursToAdd: number,
+  currency?: Currency | string
+) {
 
   const supabase = await createClient();
 
@@ -298,7 +351,7 @@ export async function topUpStudent(studentId: string, hoursToAdd: number) {
 
     .from("students")
 
-    .select("name, student_code, balance, hourly_rate, business_unit_id")
+    .select("name, student_code, balance, hourly_rate, business_unit_id, currency")
 
     .eq("id", studentId)
 
@@ -307,6 +360,8 @@ export async function topUpStudent(studentId: string, hoursToAdd: number) {
 
 
   if (fetchError || !student) return { error: "找不到学员" };
+
+  const txCurrency = normalizeCurrency(currency ?? student.currency ?? DEFAULT_CURRENCY);
 
 
 
@@ -321,8 +376,6 @@ export async function topUpStudent(studentId: string, hoursToAdd: number) {
     const incomeAmount = hoursToAdd * (student.hourly_rate || 70);
 
     const desc = `学员充值: [${student.student_code || '无学号'}] ${student.name} (+${hoursToAdd}课时)`;
-
-    
 
     await supabase.from("transactions").insert({
 
@@ -343,6 +396,8 @@ export async function topUpStudent(studentId: string, hoursToAdd: number) {
       student_id: studentId,
 
       quantity: hoursToAdd,
+
+      currency: txCurrency,
 
     });
 
@@ -386,7 +441,7 @@ export async function refundStudent(studentId: string, hoursToSubtract: number) 
 
     .from("students")
 
-    .select("name, student_code, balance, hourly_rate, business_unit_id")
+    .select("name, student_code, balance, hourly_rate, business_unit_id, currency")
 
     .eq("id", studentId)
 
@@ -437,6 +492,8 @@ export async function refundStudent(studentId: string, hoursToSubtract: number) 
     student_id: studentId,
 
     quantity: hoursToSubtract,
+
+    currency: normalizeCurrency(student.currency),
 
   });
 
