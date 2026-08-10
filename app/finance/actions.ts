@@ -194,7 +194,7 @@ export async function getFinanceStats(businessId: string, range: string) {
   const bookingStartIso = range === "week" ? startStr : startDate.toISOString();
   const bookingEndIso = range === "week" ? endStr : endDate.toISOString();
 
-  let [transactionsRes, bookingsRes] = await Promise.all([
+  const [transactionsRes, bookingsPrimary] = await Promise.all([
     txQuery,
     supabase
       .from("bookings")
@@ -205,16 +205,19 @@ export async function getFinanceStats(businessId: string, range: string) {
       .lte("start_time", bookingEndIso),
   ]);
 
+  let bookings: any[] = bookingsPrimary.data || [];
+
   // 若显式关联 currency 失败，回退不带 student.currency
-  if (bookingsRes.error) {
-    console.error("[getFinanceStats] bookings error, retry without currency:", bookingsRes.error.message);
-    bookingsRes = await supabase
+  if (bookingsPrimary.error) {
+    console.error("[getFinanceStats] bookings error, retry without currency:", bookingsPrimary.error.message);
+    const bookingsFallback = await supabase
       .from("bookings")
       .select(`start_time, duration, actual_rate, student:students(hourly_rate)`)
       .eq("business_unit_id", businessId)
       .eq("status", "completed")
       .gte("start_time", bookingStartIso)
       .lte("start_time", bookingEndIso);
+    bookings = bookingsFallback.data || [];
   }
 
   if (transactionsRes.error) {
@@ -239,8 +242,6 @@ export async function getFinanceStats(businessId: string, range: string) {
       return day >= monthStartDay && day <= monthEndDay;
     });
   }
-
-  const bookings = bookingsRes.data || [];
   
   const byCurrency = aggregateByCurrency(transactions);
   const income = byCurrency.NZD.income;
