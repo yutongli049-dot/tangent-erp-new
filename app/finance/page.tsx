@@ -32,7 +32,7 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("month"); 
   const [data, setData] = useState<any>({
-    income: 0, expense: 0, net: 0, realized: 0,
+    income: 0, expense: 0, net: 0, realized: 0, realizedRmb: 0,
     byCurrency: {
       NZD: { income: 0, expense: 0, net: 0 },
       RMB: { income: 0, expense: 0, net: 0 },
@@ -225,8 +225,8 @@ export default function FinancePage() {
           </Card>
           <Card className="snap-center min-w-[85vw] md:min-w-0 p-5 border-amber-100 bg-amber-50/50 shadow-sm flex flex-col justify-between h-auto">
              <div className="flex justify-between items-start">
-               <div><p className="text-xs font-bold text-amber-600 uppercase tracking-wider">消课产值 (Realized)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${data.realized.toLocaleString()}</h2>
-               <p className="text-[10px] text-amber-600/70 mt-1 font-medium">按 NZD 课时费率推算</p>
+               <div><p className="text-xs font-bold text-amber-600 uppercase tracking-wider">消课产值 (Realized)</p><h2 className="text-3xl font-black text-slate-900 mt-2">${Number(data.realized).toLocaleString(undefined, { maximumFractionDigits: 2 })}</h2>
+               <p className="text-sm font-bold text-amber-700/80 mt-1 tabular-nums">¥{Number(data.realizedRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} <span className="text-[10px] font-medium text-amber-600/70">RMB</span></p>
                </div>
                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><TrendingUp className="h-5 w-5" /></div>
              </div>

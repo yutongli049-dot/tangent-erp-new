@@ -63,6 +63,32 @@ export function nzEndOfDayUtc(dateStr: string): Date {
   return fromZonedTime(`${dateStr} 23:59:59`, TZ_NZ);
 }
 
+/** 新西兰当日开始时刻的 UTC Date */
+export function nzStartOfDayUtc(dateStr: string): Date {
+  return fromZonedTime(`${dateStr} 00:00:00`, TZ_NZ);
+}
+
+/**
+ * 新西兰自然月起止（本月 1 号 00:00:00 → 月末 23:59:59 NZT）→ UTC ISO
+ * monthOffset: 0=本月, -1=上月
+ */
+export function getNzMonthBounds(
+  monthOffset = 0,
+  reference: Date = new Date()
+): { startIso: string; endIso: string; startDate: string; endDate: string } {
+  const todayNz = formatInTimeZone(reference, TZ_NZ, "yyyy-MM-dd");
+  const firstOfThisMonth = `${todayNz.slice(0, 8)}01`;
+  const startDate = addCalendarMonthsInNZ(firstOfThisMonth, monthOffset);
+  const nextMonthFirst = addCalendarMonthsInNZ(startDate, 1);
+  const endDate = addCalendarDaysInNZ(nextMonthFirst, -1);
+  return {
+    startDate,
+    endDate,
+    startIso: nzStartOfDayUtc(startDate).toISOString(),
+    endIso: nzEndOfDayUtc(endDate).toISOString(),
+  };
+}
+
 /** 双时区时间展示：16:00 (NZT) / 12:00 (BJT) */
 export function formatDualTime(utcIso: string): string {
   const d = new Date(utcIso);

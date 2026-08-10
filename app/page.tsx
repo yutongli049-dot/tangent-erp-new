@@ -88,7 +88,8 @@ export default function Home() {
   
   const [stats, setStats] = useState<any>({
     cashIncome: 0, netCashFlow: 0, cashIncomeRmb: 0, netCashFlowRmb: 0,
-    realizedRevenue: 0, unearnedRevenue: 0,
+    realizedRevenue: 0, realizedRevenueRmb: 0,
+    unearnedRevenue: 0, unearnedRevenueRmb: 0,
     chartData: [], calendarBookings: [], lowBalanceStudents: []
   });
   
@@ -234,11 +235,11 @@ export default function Home() {
                        <Wallet className="h-3 w-3" /> 净现金流 (Net)
                      </p>
                      <h2 className="text-4xl font-black tracking-tight flex items-center gap-2">
-                       {stats.netCashFlow >= 0 ? '+' : ''}${stats.netCashFlow.toLocaleString()}
+                       {stats.netCashFlow >= 0 ? '+' : ''}${Number(stats.netCashFlow).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        <ArrowUpRight className="h-5 w-5 opacity-50" />
                      </h2>
                      <p className="text-indigo-200/80 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                       RMB: ¥{(stats.netCashFlowRmb ?? 0).toLocaleString()}
+                       RMB: ¥{Number(stats.netCashFlowRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                      </p>
                    </div>
                    <div className="absolute bottom-0 left-0 right-0 h-24 w-full opacity-30 pointer-events-none z-0">
@@ -262,11 +263,11 @@ export default function Home() {
                        <Clock className="h-3 w-3" /> 本月已消课
                      </p>
                      <h2 className="text-4xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-                       ${stats.realizedRevenue.toLocaleString()}
+                       ${Number(stats.realizedRevenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        <ArrowUpRight className="h-5 w-5 text-slate-300" />
                      </h2>
                      <p className="text-slate-400 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                       RMB: ¥{(stats.cashIncomeRmb ?? 0).toLocaleString()}
+                       RMB: ¥{Number(stats.realizedRevenueRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                      </p>
                    </div>
                    <div className="z-10 mt-auto">
@@ -283,11 +284,11 @@ export default function Home() {
                         <PiggyBank className="h-3 w-3" /> 资金池 (Pool)
                      </p>
                      <h2 className="text-4xl font-black tracking-tight flex items-center gap-2">
-                       ${stats.unearnedRevenue.toLocaleString()}
+                       ${Number(stats.unearnedRevenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        <ArrowUpRight className="h-5 w-5 opacity-50" />
                      </h2>
                      <p className="text-slate-500 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                       RMB: ¥0
+                       RMB: ¥{Number(stats.unearnedRevenueRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                      </p>
                    </div>
                    <div className="text-xs text-slate-600 font-medium z-10">* 预收学费总额</div>
@@ -306,9 +307,12 @@ export default function Home() {
                   <div className="h-48 rounded-3xl bg-indigo-600 p-6 text-white shadow-lg relative overflow-hidden">
                      <div className="z-10 relative">
                        <p className="text-indigo-200 text-xs font-bold uppercase">净现金流 (Net)</p>
-                       <h2 className="text-4xl font-black mt-2 flex items-center gap-2">${stats.netCashFlow.toLocaleString()} <ArrowUpRight className="h-5 w-5 opacity-50"/></h2>
+                       <h2 className="text-4xl font-black mt-2 flex items-center gap-2">
+                         {stats.netCashFlow >= 0 ? '+' : ''}${Number(stats.netCashFlow).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                         <ArrowUpRight className="h-5 w-5 opacity-50"/>
+                       </h2>
                        <p className="text-indigo-200/80 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                         RMB: ¥{(stats.netCashFlowRmb ?? 0).toLocaleString()}
+                         RMB: ¥{Number(stats.netCashFlowRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        </p>
                      </div>
                      <div className="absolute bottom-0 left-0 right-0 h-24 w-full opacity-30 group-hover:opacity-40 transition-opacity pointer-events-none">
@@ -320,9 +324,9 @@ export default function Home() {
                   <div className="h-48 rounded-3xl bg-white border border-slate-200 p-6 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-indigo-300 hover:shadow-md transition-all">
                      <div>
                        <p className="text-slate-500 text-xs font-bold uppercase">本月已消课</p>
-                       <h2 className="text-4xl font-black mt-2 text-slate-900">${stats.realizedRevenue.toLocaleString()}</h2>
+                       <h2 className="text-4xl font-black mt-2 text-slate-900">${Number(stats.realizedRevenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</h2>
                        <p className="text-slate-400 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                         RMB: ¥{(stats.cashIncomeRmb ?? 0).toLocaleString()}
+                         RMB: ¥{Number(stats.realizedRevenueRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        </p>
                      </div>
                      <div className="text-right"><div className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center ml-auto"><ArrowUpRight className="h-5 w-5 text-slate-400"/></div></div>
@@ -332,9 +336,9 @@ export default function Home() {
                   <div className="h-48 rounded-3xl bg-slate-900 p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-between">
                      <div>
                        <p className="text-slate-500 text-xs font-bold uppercase">资金池 (负债)</p>
-                       <h2 className="text-4xl font-black mt-2">${stats.unearnedRevenue.toLocaleString()}</h2>
+                       <h2 className="text-4xl font-black mt-2">${Number(stats.unearnedRevenue).toLocaleString(undefined, { maximumFractionDigits: 2 })}</h2>
                        <p className="text-slate-500 text-xs font-medium mt-1.5 tabular-nums tracking-wide">
-                         RMB: ¥0
+                         RMB: ¥{Number(stats.unearnedRevenueRmb ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                        </p>
                      </div>
                      <div className="text-right"><div className="h-10 w-10 bg-slate-800 rounded-full flex items-center justify-center ml-auto"><ArrowUpRight className="h-5 w-5 text-slate-400"/></div></div>

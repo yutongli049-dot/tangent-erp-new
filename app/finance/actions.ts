@@ -3,8 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { incrementStudentBalance } from "@/lib/student-balance";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, format, eachDayOfInterval } from "date-fns";
+import { startOfWeek, endOfWeek, format, eachDayOfInterval } from "date-fns";
 import { aggregateByCurrency, DEFAULT_CURRENCY, normalizeCurrency } from "@/lib/currency";
+import { getNzMonthBounds, getTodayInNZ, nzStartOfDayUtc, nzEndOfDayUtc } from "@/lib/timezone";
 
 // 1. 创建流水
 export async function createTransaction(prevState: any, formData: FormData) {
@@ -105,28 +106,69 @@ export async function updateTransaction(
   return { success: true };
 }
 
-// 4. 获取概览 — 双币种独立汇总，不折算
+// 4. 获取概览 — 双币种独立汇总；「本月」与 Dashboard 共用 NZT 月界
 export async function getFinanceStats(businessId: string, range: string) {
   const supabase = await createClient();
   const now = new Date();
-  let startDate = new Date();
-  let endDate = new Date();
+  let startStr: string;
+  let endStr: string;
+  let startDate: Date;
+  let endDate: Date;
 
   switch (range) {
-    case "week": startDate = startOfWeek(now, { weekStartsOn: 1 }); endDate = endOfWeek(now, { weekStartsOn: 1 }); break;
-    case "month": startDate = startOfMonth(now); endDate = endOfMonth(now); break;
-    case "prev_month": const prev = subMonths(now, 1); startDate = startOfMonth(prev); endDate = endOfMonth(prev); break;
-    case "3months": startDate = startOfMonth(subMonths(now, 2)); endDate = endOfMonth(now); break;
-    case "year": startDate = startOfYear(now); endDate = endOfYear(now); break;
-    default: startDate = startOfMonth(now); endDate = endOfMonth(now);
+    case "week": {
+      startDate = startOfWeek(now, { weekStartsOn: 1 });
+      endDate = endOfWeek(now, { weekStartsOn: 1 });
+      startStr = startDate.toISOString();
+      endStr = endDate.toISOString();
+      break;
+    }
+    case "month": {
+      const bounds = getNzMonthBounds(0);
+      startStr = bounds.startIso;
+      endStr = bounds.endIso;
+      startDate = new Date(bounds.startIso);
+      endDate = new Date(bounds.endIso);
+      break;
+    }
+    case "prev_month": {
+      const bounds = getNzMonthBounds(-1);
+      startStr = bounds.startIso;
+      endStr = bounds.endIso;
+      startDate = new Date(bounds.startIso);
+      endDate = new Date(bounds.endIso);
+      break;
+    }
+    case "3months": {
+      const endBounds = getNzMonthBounds(0);
+      const startBounds = getNzMonthBounds(-2);
+      startStr = startBounds.startIso;
+      endStr = endBounds.endIso;
+      startDate = new Date(startBounds.startIso);
+      endDate = new Date(endBounds.endIso);
+      break;
+    }
+    case "year": {
+      const todayNz = getTodayInNZ();
+      const y = todayNz.slice(0, 4);
+      startStr = nzStartOfDayUtc(`${y}-01-01`).toISOString();
+      endStr = nzEndOfDayUtc(`${y}-12-31`).toISOString();
+      startDate = new Date(startStr);
+      endDate = new Date(endStr);
+      break;
+    }
+    default: {
+      const bounds = getNzMonthBounds(0);
+      startStr = bounds.startIso;
+      endStr = bounds.endIso;
+      startDate = new Date(bounds.startIso);
+      endDate = new Date(bounds.endIso);
+    }
   }
-
-  const startStr = startDate.toISOString();
-  const endStr = endDate.toISOString();
 
   const [transactionsRes, bookingsRes] = await Promise.all([
     supabase.from("transactions").select("*").eq("business_unit_id", businessId).gte("transaction_date", startStr).lte("transaction_date", endStr).order("transaction_date", { ascending: false }),
-    supabase.from("bookings").select(`start_time, duration, student:students(hourly_rate)`).eq("business_unit_id", businessId).eq("status", "completed").gte("start_time", startStr).lte("start_time", endStr),
+    supabase.from("bookings").select(`start_time, duration, actual_rate, student:students(hourly_rate, currency)`).eq("business_unit_id", businessId).eq("status", "completed").gte("start_time", startStr).lte("start_time", endStr),
   ]);
 
   const transactions = transactionsRes.data || [];
@@ -136,10 +178,13 @@ export async function getFinanceStats(businessId: string, range: string) {
   const income = byCurrency.NZD.income;
   const expense = byCurrency.NZD.expense;
   let realized = 0;
+  let realizedRmb = 0;
 
   bookings.forEach((b: any) => {
-    const rate = b.student?.hourly_rate || 70; 
-    realized += (b.duration * rate);
+    const rate = Number(b.actual_rate ?? b.student?.hourly_rate ?? 70);
+    const value = Number(b.duration) * rate;
+    if (normalizeCurrency(b.student?.currency) === "RMB") realizedRmb += value;
+    else realized += value;
   });
 
   const daysInterval = eachDayOfInterval({ start: startDate, end: endDate });
@@ -152,22 +197,23 @@ export async function getFinanceStats(businessId: string, range: string) {
     let dailyExpenseRmb = 0;
 
     transactions.forEach(t => {
-      if (t.transaction_date.startsWith(dateStr)) {
+      if (String(t.transaction_date).startsWith(dateStr)) {
         const cur = normalizeCurrency(t.currency);
         const amt = Number(t.amount);
         if (cur === "RMB") {
           if (t.type === 'income') dailyIncomeRmb += amt;
-          else if (t.type === 'expense') dailyExpenseRmb += amt;
+          else if (t.type === 'expense') dailyExpenseRmb += Math.abs(amt);
         } else {
           if (t.type === 'income') dailyIncome += amt;
-          else if (t.type === 'expense') dailyExpense += amt;
+          else if (t.type === 'expense') dailyExpense += Math.abs(amt);
         }
       }
     });
 
     bookings.forEach((b: any) => {
-      if (b.start_time.startsWith(dateStr)) {
-        dailyRealized += (b.duration * (b.student?.hourly_rate || 70));
+      if (String(b.start_time).startsWith(dateStr)) {
+        const rate = Number(b.actual_rate ?? b.student?.hourly_rate ?? 70);
+        dailyRealized += Number(b.duration) * rate;
       }
     });
 
@@ -189,6 +235,7 @@ export async function getFinanceStats(businessId: string, range: string) {
     expense,
     net: income - expense,
     realized,
+    realizedRmb,
     byCurrency,
     transactions,
     chartData,
