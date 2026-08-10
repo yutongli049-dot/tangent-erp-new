@@ -124,7 +124,9 @@ export default function Home() {
       if (currentBusinessId) {
         setLoading(true);
         try {
-          const data = await getDashboardStats(currentBusinessId);
+          // 确保传入有效租户 ID（与 Finance 一致）
+          const unitId = currentBusinessId || "cus";
+          const data = await getDashboardStats(unitId);
           setStats(data);
         } catch (error) { console.error(error); } 
         finally { setLoading(false); }

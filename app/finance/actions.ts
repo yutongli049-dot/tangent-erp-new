@@ -4,8 +4,19 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { incrementStudentBalance } from "@/lib/student-balance";
 import { startOfWeek, endOfWeek, format, eachDayOfInterval } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { aggregateByCurrency, DEFAULT_CURRENCY, normalizeCurrency } from "@/lib/currency";
-import { getNzMonthBounds, getTodayInNZ, nzStartOfDayUtc, nzEndOfDayUtc } from "@/lib/timezone";
+import { getNzMonthBounds, getTodayInNZ, nzStartOfDayUtc, nzEndOfDayUtc, TZ_NZ } from "@/lib/timezone";
+
+/** 流水/时间戳 → NZ 日历日 YYYY-MM-DD */
+function toNzCalendarDay(value: string | null | undefined): string {
+  if (!value) return "";
+  const raw = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
+  return formatInTimeZone(d, TZ_NZ, "yyyy-MM-dd");
+}
 
 // 1. 创建流水
 export async function createTransaction(prevState: any, formData: FormData) {
@@ -125,16 +136,17 @@ export async function getFinanceStats(businessId: string, range: string) {
     }
     case "month": {
       const bounds = getNzMonthBounds(0);
-      startStr = bounds.startIso;
-      endStr = bounds.endIso;
+      // 半开区间 [月初, 下月1日)：兼容 DATE 与 timestamptz 两种存法
+      startStr = bounds.startDate;
+      endStr = bounds.nextMonthStart;
       startDate = new Date(bounds.startIso);
       endDate = new Date(bounds.endIso);
       break;
     }
     case "prev_month": {
       const bounds = getNzMonthBounds(-1);
-      startStr = bounds.startIso;
-      endStr = bounds.endIso;
+      startStr = bounds.startDate;
+      endStr = bounds.nextMonthStart;
       startDate = new Date(bounds.startIso);
       endDate = new Date(bounds.endIso);
       break;
@@ -142,36 +154,92 @@ export async function getFinanceStats(businessId: string, range: string) {
     case "3months": {
       const endBounds = getNzMonthBounds(0);
       const startBounds = getNzMonthBounds(-2);
-      startStr = startBounds.startIso;
-      endStr = endBounds.endIso;
+      startStr = startBounds.startDate;
+      endStr = endBounds.nextMonthStart;
       startDate = new Date(startBounds.startIso);
       endDate = new Date(endBounds.endIso);
       break;
     }
     case "year": {
       const todayNz = getTodayInNZ();
-      const y = todayNz.slice(0, 4);
-      startStr = nzStartOfDayUtc(`${y}-01-01`).toISOString();
-      endStr = nzEndOfDayUtc(`${y}-12-31`).toISOString();
-      startDate = new Date(startStr);
-      endDate = new Date(endStr);
+      const y = Number(todayNz.slice(0, 4));
+      startStr = `${y}-01-01`;
+      endStr = `${y + 1}-01-01`;
+      startDate = nzStartOfDayUtc(`${y}-01-01`);
+      endDate = nzEndOfDayUtc(`${y}-12-31`);
       break;
     }
     default: {
       const bounds = getNzMonthBounds(0);
-      startStr = bounds.startIso;
-      endStr = bounds.endIso;
+      startStr = bounds.startDate;
+      endStr = bounds.nextMonthStart;
       startDate = new Date(bounds.startIso);
       endDate = new Date(bounds.endIso);
     }
   }
 
-  const [transactionsRes, bookingsRes] = await Promise.all([
-    supabase.from("transactions").select("*").eq("business_unit_id", businessId).gte("transaction_date", startStr).lte("transaction_date", endStr).order("transaction_date", { ascending: false }),
-    supabase.from("bookings").select(`start_time, duration, actual_rate, student:students(hourly_rate, currency)`).eq("business_unit_id", businessId).eq("status", "completed").gte("start_time", startStr).lte("start_time", endStr),
+  // 流水查询：按 business_unit_id 隔离；月界用半开区间，兼容 DATE / timestamptz
+  // select *：避免因 currency 等列尚未迁移导致整查询失败 → 空数组 → 净现金流 $0
+  let txQuery = supabase
+    .from("transactions")
+    .select("*")
+    .eq("business_unit_id", businessId)
+    .order("transaction_date", { ascending: false });
+
+  txQuery =
+    range === "week"
+      ? txQuery.gte("transaction_date", startStr).lte("transaction_date", endStr)
+      : txQuery.gte("transaction_date", startStr).lt("transaction_date", endStr);
+
+  const bookingStartIso = range === "week" ? startStr : startDate.toISOString();
+  const bookingEndIso = range === "week" ? endStr : endDate.toISOString();
+
+  let [transactionsRes, bookingsRes] = await Promise.all([
+    txQuery,
+    supabase
+      .from("bookings")
+      .select(`start_time, duration, actual_rate, student:students(hourly_rate, currency)`)
+      .eq("business_unit_id", businessId)
+      .eq("status", "completed")
+      .gte("start_time", bookingStartIso)
+      .lte("start_time", bookingEndIso),
   ]);
 
-  const transactions = transactionsRes.data || [];
+  // 若显式关联 currency 失败，回退不带 student.currency
+  if (bookingsRes.error) {
+    console.error("[getFinanceStats] bookings error, retry without currency:", bookingsRes.error.message);
+    bookingsRes = await supabase
+      .from("bookings")
+      .select(`start_time, duration, actual_rate, student:students(hourly_rate)`)
+      .eq("business_unit_id", businessId)
+      .eq("status", "completed")
+      .gte("start_time", bookingStartIso)
+      .lte("start_time", bookingEndIso);
+  }
+
+  if (transactionsRes.error) {
+    console.error("[getFinanceStats] transactions error:", transactionsRes.error.message, {
+      businessId,
+      range,
+      startStr,
+      endStr,
+    });
+  }
+
+  // 再按 NZ 日历日收紧，防止 DATE/timestamptz 边界漏数或串月
+  const monthStartDay =
+    range === "week" ? "" : formatInTimeZone(startDate, TZ_NZ, "yyyy-MM-dd");
+  const monthEndDay =
+    range === "week" ? "" : formatInTimeZone(endDate, TZ_NZ, "yyyy-MM-dd");
+
+  let transactions = transactionsRes.data || [];
+  if (monthStartDay && monthEndDay) {
+    transactions = transactions.filter((t) => {
+      const day = toNzCalendarDay(t.transaction_date);
+      return day >= monthStartDay && day <= monthEndDay;
+    });
+  }
+
   const bookings = bookingsRes.data || [];
   
   const byCurrency = aggregateByCurrency(transactions);

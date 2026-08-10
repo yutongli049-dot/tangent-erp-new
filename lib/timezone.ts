@@ -71,19 +71,27 @@ export function nzStartOfDayUtc(dateStr: string): Date {
 /**
  * 新西兰自然月起止（本月 1 号 00:00:00 → 月末 23:59:59 NZT）→ UTC ISO
  * monthOffset: 0=本月, -1=上月
+ * nextMonthStart: 下月 1 号 YYYY-MM-DD，用于 transaction_date 的半开区间过滤 [.gte(start), .lt(next))
  */
 export function getNzMonthBounds(
   monthOffset = 0,
   reference: Date = new Date()
-): { startIso: string; endIso: string; startDate: string; endDate: string } {
+): {
+  startIso: string;
+  endIso: string;
+  startDate: string;
+  endDate: string;
+  nextMonthStart: string;
+} {
   const todayNz = formatInTimeZone(reference, TZ_NZ, "yyyy-MM-dd");
   const firstOfThisMonth = `${todayNz.slice(0, 8)}01`;
   const startDate = addCalendarMonthsInNZ(firstOfThisMonth, monthOffset);
-  const nextMonthFirst = addCalendarMonthsInNZ(startDate, 1);
-  const endDate = addCalendarDaysInNZ(nextMonthFirst, -1);
+  const nextMonthStart = addCalendarMonthsInNZ(startDate, 1);
+  const endDate = addCalendarDaysInNZ(nextMonthStart, -1);
   return {
     startDate,
     endDate,
+    nextMonthStart,
     startIso: nzStartOfDayUtc(startDate).toISOString(),
     endIso: nzEndOfDayUtc(endDate).toISOString(),
   };
