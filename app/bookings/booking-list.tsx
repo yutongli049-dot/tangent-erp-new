@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   MapPin, Loader2, Trash2, Pencil, Check, 
-  Calendar as CalendarIcon, BookOpen, FileText
+  Calendar as CalendarIcon, FileText
 } from "lucide-react";
 import { isPast } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -36,12 +36,24 @@ type Booking = {
   location: string | null;
   student: { id: string; name: string; teacher: string | null; subject: string | null; hourly_rate?: number; student_code?: string; } | null;
   business_unit_id: string;
+  actual_rate?: number | null;
+  metadata?: {
+    coach?: string | null;
+    useInstructorCar?: boolean | null;
+    plateNumber?: string | null;
+  } | null;
 };
 
 type ScopeDialogState =
   | { mode: "cancel"; booking: Booking }
   | { mode: "update"; booking: Booking }
   | null;
+
+type ScopedActionResult = {
+  error?: string;
+  cancelledCount?: number;
+  updatedCount?: number;
+};
 
 export function BookingList({ bookings }: { bookings: Booking[] }) {
   const { currentBusinessId } = useBusiness();
@@ -106,15 +118,15 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
     setLoadingId(booking.id);
 
     if (mode === "cancel") {
-      const res = await cancelBooking(booking.id, scopeChoice);
+      const res = (await cancelBooking(booking.id, scopeChoice)) as ScopedActionResult;
       if (res?.error) toast.error(res.error);
       else {
-        const n = (res as any)?.cancelledCount || 1;
+        const n = res?.cancelledCount || 1;
         toast.success(n > 1 ? `已取消 ${n} 节课程` : "课程已取消");
         if (editingBooking?.id === booking.id) setEditingBooking(null);
       }
     } else {
-      const res = await updateBooking(
+      const res = (await updateBooking(
         booking.id,
         {
           date: editDate,
@@ -123,10 +135,10 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
           location: editLocation,
         },
         scopeChoice
-      );
+      )) as ScopedActionResult;
       if (res?.error) toast.error(res.error);
       else {
-        const n = (res as any)?.updatedCount || 1;
+        const n = res?.updatedCount || 1;
         toast.success(n > 1 ? `已更新 ${n} 节课程` : "课程已更新");
         setEditingBooking(null);
       }
@@ -207,61 +219,95 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                  <div className="h-px flex-1 bg-slate-200"></div>
               </div>
 
-              <div className="space-y-3 pl-2">
+              <div className="space-y-3">
                 {items.map(b => {
                    const isOverdue = activeTab === 'upcoming' && isPast(new Date(b.start_time)) && !isTodayInNZ(b.start_time);
+                   const studentLabel = b.student?.student_code || b.student?.name || "未知学员";
+                   const subjectLabel = b.student?.subject || "无科目";
+                   const coachLabel = b.metadata?.coach || b.student?.teacher || null;
+                   const carLabel =
+                     b.metadata?.useInstructorCar === true
+                       ? "教练车"
+                       : b.metadata?.useInstructorCar === false
+                         ? (b.metadata?.plateNumber ? `自己车 ${b.metadata.plateNumber}` : "自己车")
+                         : null;
+                   const rateLabel = b.actual_rate || b.student?.hourly_rate || null;
                    
                    return (
-                     <div key={b.id} className="relative pl-4 border-l-2 border-slate-200 hover:border-indigo-300 transition-colors py-1 group">
+                     <div key={b.id} className="relative border-l-2 border-slate-200 py-1 pl-3 transition-colors hover:border-indigo-300 group">
                         <div className={`absolute -left-[5px] top-4 h-2.5 w-2.5 rounded-full border-2 border-slate-50 ${isOverdue ? 'bg-rose-500' : b.status === 'completed' ? 'bg-slate-300' : 'bg-indigo-500'}`}></div>
                         
-                        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm active:scale-[0.99] transition-transform">
-                           <div className="flex justify-between items-start mb-3">
-                              <div className="flex items-center gap-3">
+                        <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-transform active:scale-[0.99] sm:p-4">
+                           <div className="mb-3 flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 items-start gap-3">
                                  <Avatar name={b.student?.name || "?"} />
-                                 <div>
-                                    <h4 className="font-bold text-slate-900 text-sm">{b.student?.name}</h4>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                                      <span className="flex items-center gap-1"><BookOpen className="h-3 w-3" /> {b.student?.subject || "无科目"}</span>
+                                 <div className="min-w-0 flex-1">
+                                    <div className="flex items-start justify-between gap-3">
+                                      <div className="min-w-0">
+                                        <h4 className="truncate text-base font-semibold text-slate-900">{studentLabel}</h4>
+                                        <p className="mt-0.5 truncate text-sm font-medium text-slate-700">{subjectLabel}</p>
+                                      </div>
+                                      {rateLabel ? (
+                                        <div className="shrink-0 text-right text-sm font-bold text-emerald-600">
+                                          ${rateLabel}
+                                        </div>
+                                      ) : null}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px] font-medium">
+                                        {b.status === "completed" ? "已完成" : b.status === "cancelled" ? "已取消" : "待办"}
+                                      </Badge>
+                                      <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px] font-medium border-slate-200">
+                                        {b.duration}h
+                                      </Badge>
+                                      {isOverdue && (
+                                        <Badge className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50">
+                                          已过期
+                                        </Badge>
+                                      )}
                                     </div>
                                  </div>
                               </div>
-                              <div className="text-right">
+                              <div className="shrink-0 text-right">
                                  <DualTimezoneTime utcIso={b.start_time} compact className={isOverdue ? "text-rose-500" : undefined} />
-                                 <div className="text-[10px] text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded mt-1 inline-block">
-                                   {b.duration}h
-                                 </div>
                               </div>
                            </div>
 
-                           <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-                              <div className="flex items-center gap-1 text-xs text-slate-400">
-                                <MapPin className="h-3 w-3" /> {b.location || "线上"}
+                           <div className="space-y-2 border-t border-slate-50 pt-2">
+                              <div className="space-y-1 text-xs text-slate-500">
+                                <div className="flex items-start gap-1.5">
+                                  <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                                  <span className="min-w-0 truncate">{b.location || "线上"}</span>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-[18px]">
+                                  {coachLabel ? <span className="truncate">教练：{coachLabel}</span> : null}
+                                  {carLabel ? <span className="truncate">用车：{carLabel}</span> : null}
+                                </div>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center justify-end gap-2">
                                 {activeTab === 'upcoming' ? (
                                   <>
                                     <button onClick={() => openEdit(b)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors">
                                       <Pencil className="h-4 w-4" />
                                     </button>
-                                    <button onClick={() => handleComplete(b)} disabled={!!loadingId} className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition-colors">
+                                    <button onClick={() => handleComplete(b)} disabled={!!loadingId} className="flex h-8 items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-800">
                                       {loadingId === b.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                       <span>完成</span>
                                     </button>
                                   </>
                                 ) : (
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center justify-end gap-2">
                                      {b.status === 'completed' && (
                                        <Button 
-                                         size="sm" variant="outline" className="h-7 px-2 text-[10px] gap-1 border-indigo-100 text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+                                         size="sm" variant="outline" className="h-7 gap-1 border-indigo-100 bg-indigo-50 px-2 text-[10px] text-indigo-600 hover:bg-indigo-100"
                                          onClick={() => { setInvoiceBooking(b); setInvoiceOpen(true); }}
                                        >
                                          <FileText className="h-3 w-3" /> 单据
                                        </Button>
                                      )}
                                      
-                                     <Badge variant="secondary" className="text-[10px] font-normal text-slate-400 bg-slate-50">
+                                     <Badge variant="secondary" className="rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-normal text-slate-400">
                                        {b.status === 'completed' ? '已完成' : '已取消'}
                                      </Badge>
                                      <button onClick={() => handleDelete(b.id)} className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors">

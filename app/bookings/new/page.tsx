@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useBusiness } from "@/contexts/BusinessContext";
 import { createBooking, quickCreateDrivingBooking } from "../actions"; 
 import { createClient } from "@/lib/supabase/client";
@@ -53,17 +54,17 @@ export default function NewBookingPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
       <div className="hidden md:block"><Navbar /></div>
-      <main className="mx-auto max-w-xl px-4 md:px-6 py-6 md:py-8">
+      <main className="mx-auto max-w-xl px-4 md:px-6 py-5 md:py-8">
         
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-white border-slate-200 shadow-sm" onClick={() => router.back()}>
+        <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:items-center">
+          <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-slate-200 bg-white shadow-sm sm:h-10 sm:w-10" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5 text-slate-600" />
           </Button>
-          <div>
-            <h1 className="text-xl font-black text-slate-900">
+          <div className="min-w-0">
+            <h1 className="text-lg font-black text-slate-900 sm:text-xl">
               {isDrivingSchool ? '极速排课 (Quick Book)' : '新建课程预约'}
             </h1>
-            <p className="text-xs text-slate-400 font-medium">New Session Booking</p>
+            <p className="text-[11px] font-medium text-slate-400 sm:text-xs">New Session Booking</p>
           </div>
         </div>
 
@@ -220,7 +221,7 @@ function RecurrenceSelector({
 // ==========================================
 // 🚗 驾校专属：极速排课表单
 // ==========================================
-function DrivingBookingForm({ businessId, router }: { businessId: string, router: any }) {
+function DrivingBookingForm({ businessId, router }: { businessId: string, router: AppRouterInstance }) {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -248,8 +249,6 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [needPickup, setNeedPickup] = useState(false);
   const [pickupAddress, setPickupAddress] = useState("");
   const [plateNumber, setPlateNumber] = useState("");
-
-  useEffect(() => { setActualRate(useInstructorCar ? "85" : "75"); }, [useInstructorCar]);
 
   useEffect(() => {
     async function loadSuggestions() {
@@ -280,6 +279,11 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
     if (showToast) toast.success("已解析并填充表单");
     return true;
+  };
+
+  const handleInstructorCarChange = (checked: boolean) => {
+    setUseInstructorCar(checked);
+    setActualRate(checked ? "85" : "75");
   };
 
   const submitBooking = async () => {
@@ -337,25 +341,35 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:max-w-lg sm:p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Magic Input */}
-        <div className="space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
+        <div className="space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-3 sm:p-4">
           <Label className="text-xs text-indigo-700 font-bold uppercase tracking-wider pl-1 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" /> 极速文本排课 · 回车提交
           </Label>
-          <Input
-            placeholder="3045 限制性练车 panmure 教练车 牛 85🔪"
-            value={magicInput}
-            onChange={(e) => {
-              const v = e.target.value;
-              setMagicInput(v);
-              if (v.trim().length >= 4) applyMagicParse(v, false);
-            }}
-            onKeyDown={handleMagicKeyDown}
-            className="h-12 rounded-xl border-indigo-200 bg-white font-medium text-base shadow-sm"
-            autoFocus
-          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              placeholder="输入如：3045 限制性练车 panmure 教练车 牛 85🔪"
+              value={magicInput}
+              onChange={(e) => {
+                const v = e.target.value;
+                setMagicInput(v);
+                if (v.trim().length >= 4) applyMagicParse(v, false);
+              }}
+              onKeyDown={handleMagicKeyDown}
+              className="h-12 rounded-xl border-indigo-200 bg-white text-sm font-medium shadow-sm sm:text-base"
+              autoFocus
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => applyMagicParse(magicInput)}
+              className="h-11 w-full rounded-xl border-indigo-200 bg-white text-sm font-semibold text-indigo-700 hover:bg-indigo-50 sm:w-auto"
+            >
+              解析填充
+            </Button>
+          </div>
           <p className="text-[11px] text-indigo-500/80 pl-1">
             自动识别学员、科目、教练、车辆、金额；输入后按 Enter 一键排课
           </p>
@@ -367,7 +381,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
              <div className="space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">课程阶段 *</Label>
               <CreatableCombobox
@@ -398,7 +412,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
                 placeholder="选择或输入地点"
               />
            </div>
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Start Date)</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
               <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">单节时长 (Hours)</Label><div className="relative"><Input type="number" step="0.5" min="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div></div>
            </div>
@@ -410,14 +424,14 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
            )}
         </div>
 
-        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-4">
-           <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Car className="h-4 w-4 text-slate-500" /><Label className="font-bold">使用教练车</Label></div><Switch checked={useInstructorCar} onCheckedChange={setUseInstructorCar} /></div>
+        <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+           <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Car className="h-4 w-4 text-slate-500" /><Label className="font-bold">使用教练车</Label></div><Switch checked={useInstructorCar} onCheckedChange={handleInstructorCarChange} /></div>
            {!useInstructorCar && <Input placeholder="输入学员车牌号 (选填)" value={plateNumber} onChange={(e)=>setPlateNumber(e.target.value)} className="h-10 rounded-xl" />}
            <div className="flex items-center justify-between pt-2"><div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-500" /><Label className="font-bold">需要上门接送</Label></div><Switch checked={needPickup} onCheckedChange={setNeedPickup} /></div>
            {needPickup && <Input placeholder="输入详细接送地址" value={pickupAddress} onChange={(e)=>setPickupAddress(e.target.value)} className="h-10 rounded-xl" />}
-           <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
-              <Label className="font-bold text-slate-900 flex items-center gap-1"><DollarSign className="h-4 w-4 text-emerald-500" /> 本次课单价 (/hr)</Label>
-              <Input type="number" value={actualRate} onChange={(e) => setActualRate(e.target.value)} className="h-10 w-24 rounded-xl text-right font-black text-emerald-600 border-emerald-200 bg-white" />
+           <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <Label className="flex items-center gap-1 font-bold text-slate-900"><DollarSign className="h-4 w-4 text-emerald-500" /> 本次课单价 (/hr)</Label>
+              <Input type="number" value={actualRate} onChange={(e) => setActualRate(e.target.value)} className="h-10 w-full rounded-xl border-emerald-200 bg-white text-right font-black text-emerald-600 sm:w-24" />
            </div>
         </div>
 
@@ -426,9 +440,19 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           <Textarea placeholder="选填..." value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl bg-white min-h-[80px]" />
         </div>
 
-        <Button type="submit" disabled={isLoading} className="h-14 w-full rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-base font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]">
+        <div className="flex flex-col gap-2">
+        <Button type="submit" disabled={isLoading} className="h-11 w-full rounded-2xl bg-indigo-600 text-base font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] hover:bg-indigo-700 sm:h-12">
           {isLoading ? <><Loader2 className="mr-2 animate-spin" /> 提交中...</> : (isRecurringMode(repeatMode) ? "批量排课" : "一键排课")}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => applyMagicParse(magicInput)}
+          className="h-11 w-full rounded-2xl border-slate-200 text-sm font-semibold sm:hidden"
+        >
+          仅解析文本
+        </Button>
+        </div>
       </form>
     </div>
   );
@@ -437,7 +461,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 // ==========================================
 // 📚 教培专属：标准排课表单
 // ==========================================
-function TutoringBookingForm({ businessId, router }: { businessId: string, router: any }) {
+function TutoringBookingForm({ businessId, router }: { businessId: string, router: AppRouterInstance }) {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [students, setStudents] = useState<StudentWithMeta[]>([]);
