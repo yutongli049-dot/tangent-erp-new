@@ -1,0 +1,484 @@
+﻿date,duration_hours,student_identifier,course_type,raw_summary,location,calculated_amount,actual_rate,price_source,coach_car_notes
+2025-08-26 09:00,2,409,陪考,409 练车➕陪考 westgate 老公 Pju470,"VTNZ, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:PJU470
+2025-08-26 11:30,2,447,练车,447 练车 northshore 老公 教练车,"191 Queen St, Auckland CBD, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-08-26 15:00,1,374,练车,374 练车 北岸 老公,"93 Stanley Point Rd, Stanley Point, Auckland, New Zealand",75,75,default,教练:老公
+2025-08-26 19:00,2,447,练车,447 练车 northshore 老公 教练车,"191 Queen St, Auckland CBD, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-08-27 08:30,1,432,练车,432 练车 mtwell 老公 NKE894,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:NKE894
+2025-08-27 09:45,2,447,练车,447 练车 northshore 老公 cityhop,"191 Queen St, Auckland CBD, Auckland, New Zealand",150,75,default,教练:老公
+2025-08-27 12:00,2,445,练车,445 练车 albany 老公 RHA978,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公 | 车牌:RHA978
+2025-08-27 14:30,1,420,练车,420 练车 老公 albany deyan,"Massey University, 151 Dairy Flat Highway, Albany, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-08-30 13:30,1,456,练车,456 练车 mtwell 老公,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公
+2025-08-31 15:30,1,460,练车,460练车 老公 albany QHF173,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:QHF173
+2025-08-31 17:00,1,452,练车,452 练车 mtwell 老公 RHY742,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:RHY742
+2025-09-01 10:30,1,460,陪考,460练车 陪考 albany QHF173,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,车牌:QHF173
+2025-09-01 18:00,1,453,练车,453 练车 wiri 老公,"VTNZ Wiri, 103 Roscommon Rd, Wiri, Auckland 2104, New Zealand",75,75,default,教练:老公
+2025-09-02 15:45,1,460,陪考,460 陪考 albany QHF173,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,车牌:QHF173
+2025-09-02 17:00,1,462,练车,462 练车 northshore 老公 qtz472,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公 | 车牌:QTZ472
+2025-09-06 12:00,1,450,练车,450 练车 mtwell 老公 HKK648,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:HKK648
+2025-09-06 13:30,3,407,练车,407 练车 中区 老公 教练车,"8 Eldon Rd, Mount Eden, 奥克兰, 新西兰",225,75,default,教练:老公 | 教练车
+2025-09-07 11:00,2,471,练车,471 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公
+2025-09-07 15:00,1,465,练车,465 练车 newlynn 老公 QMQ209,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:QMQ209
+2025-09-07 16:30,2,453,练车,453 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-09-09 16:30,1,479,练车,479 练车 newlynn 老公 RAD82,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:RAD82
+2025-09-10 10:30,2,404,陪考,404 租车 接送 陪考 mtwell 老公,"55 Symonds St, Grafton, Auckland, New Zealand",150,75,default,教练:老公 | 接送
+2025-09-10 13:30,1,453,考试,453 考试 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公
+2025-09-10 16:00,1,487,练车,487 练车 albany 老公 rby39,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:RBY39
+2025-09-10 18:00,1,484,练车,484 练车 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公
+2025-09-11 12:00,1,476,练车,476 练车 老公 newlynn 728,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-09-12 12:30,1,471,考试,471 考试 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-09-13 08:00,2,407,练车,407 练车 中区 老公,"8 Eldon Rd, Mount Eden, 奥克兰, 新西兰",150,75,default,教练:老公
+2025-09-13 10:30,2,489,练车,489 练车 albany 老公 LZN500,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公 | 车牌:LZN500
+2025-09-14 10:00,2,445,练车,445 练车 albany 老公 RHA978,"Massey University, 151 Dairy Flat Highway, Albany, Auckland 0632, New Zealand",150,75,default,教练:老公 | 车牌:RHA978
+2025-09-14 12:30,2,486,练车,486 练车 westgate 老公 320转介绍 jcj786,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:JCJ786
+2025-09-14 15:00,2,467,练车,467 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-09-16 10:00,1,470,练车,470 练车 northshore 老公 QMR578,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公 | 车牌:QMR578
+2025-09-16 17:30,1,504,练车,504 练车 highbrook 老公 mns975,"Vtnz Highbrook, 33 Cryers Rd, Highbrook, Auckland 2013, New Zealand",75,75,default,教练:老公 | 车牌:MNS975
+2025-09-16 19:00,1,513,练车,513 练车 mtwell 老公 lmu15,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:LMU15
+2025-09-17 06:00,1,374,练车,374 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-09-17 07:00,1,356,练车,356 练车 albany 老公 LKE602,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:LKE602
+2025-09-17 08:00,1,390,练车,390 练车 albany 老公 RDC193,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:RDC193
+2025-09-17 16:00,1,476,练车,476 练车 老公 newlynn （50🔪）,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",50,50,explicit,教练:老公
+2025-09-18 10:00,1,501,练车,501 练车 newlynn 老公 KCP181,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:KCP181
+2025-09-18 11:00,1,476,考试,476 练车 老公 newlynn 728 收考试费,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-09-19 13:00,1,486,陪考,486 陪考 westgate 老公 320转介绍 jcj786,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公 | 车牌:JCJ786
+2025-09-21 07:00,2,517,练车,517 练车 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公
+2025-09-23 11:00,1,509,练车,509 练车 albany 老公 1111QQ,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-09-23 16:00,2,514,练车,514 练车 newlynn 老公 PPL783,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公 | 车牌:PPL783
+2025-09-24 08:15,1,517,陪考,517 陪考 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公
+2025-09-24 11:00,1,476,陪考,476 陪考 老公 newlynn,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-09-24 12:00,1,514,练车,514 练车 newlynn 老公 PPL783,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:PPL783
+2025-09-24 16:30,2,519,练车,519 练车 northshore 老公 NTQ875,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公 | 车牌:NTQ875
+2025-09-25 15:30,2,523,练车,523 练车 westgate 老公 RCP485,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:RCP485
+2025-09-27 09:30,1,528,练车,528 练车 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公
+2025-09-27 11:00,1,522,练车,522 练车 newlynn 老公 RDC148,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:RDC148
+2025-09-28 18:00,1,514,练车,514 练车 newlynn 老公 PPL783,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:PPL783
+2025-10-02 07:00,2,511,练车,511 练车 westgate 老公 RHY731,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:RHY731
+2025-10-02 09:00,1,534,练车,534 练车 westgate 老公 PQR40,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公 | 车牌:PQR40
+2025-10-02 13:00,2,511,练车,511 练车 westgate 宝宝 RHY731,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,车牌:RHY731
+2025-10-02 19:00,2,511,练车,511 练车 westgate 老公 RHY731,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:RHY731
+2025-10-05 08:30,3,441,练车,441 练车 东区 老公,"5 Tiro St, Flat Bush, Auckland, New Zealand",225,75,default,教练:老公
+2025-10-05 12:00,1,535,练车,535 练车 mtwell 老公 HWF969,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:HWF969
+2025-10-05 13:00,1,536,练车,536 练车 mtwell 老公 QJP729,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:QJP729
+2025-10-08 10:00,1,517,陪考,517 陪考 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公
+2025-10-08 16:30,1,514,练车,514 练车 newlynn 老公 PPL783,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:PPL783
+2025-10-11 08:00,1,524,练车,524 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-10-11 11:00,1,540,练车,540 练车 newlynn 老公 RHZ220,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:RHZ220
+2025-10-11 13:30,1,547,练车,547 练车 albany 老公 PPW898,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:PPW898
+2025-10-11 16:00,1,539,练车,539 练车 albany 老公 QNH219,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:QNH219
+2025-10-12 07:30,1,450,练车,450 练车 mtwell 老公 HKK648,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:HKK648
+2025-10-12 10:00,2,537,练车,537 练车 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公
+2025-10-13 16:30,1,522,练车,522 练车 newlynn 老公 RDC148,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:RDC148
+2025-10-13 17:30,1,550,练车,550 练车 newlynn 老公 QEG2,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-10-14 14:00,1,559,练车,559 练车 northshore 老公 NFS887,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公 | 车牌:NFS887
+2025-10-15 17:00,1,488,练车,488 练车 albany 老公 Jep353,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:JEP353
+2025-10-18 10:00,2,563,练车,563 练车 newlynn 老公,"Carlaw Park Student Village, 28 Stanley St, Auckland CBD, Auckland 1010, New Zealand",150,75,default,教练:老公
+2025-10-19 10:00,2,560,练车,560 练车 mtwell 老公 learner,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公
+2025-10-19 12:30,2,563,练车,563 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-10-23 16:30,2,560,练车,560 练车 mtwell 老公 learner,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公
+2025-10-25 09:00,1,580,练车,580 练车 newlynn 老公 181,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-10-25 10:30,1,569,练车,569 练车 mtwell 老公 qye875,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:QYE875
+2025-10-25 11:30,2,560,练车,560 练车 mtwell 老公 learner,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公
+2025-10-25 14:00,2,530,练车,530 练车 northshore 老公 rgj670,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公 | 车牌:RGJ670
+2025-10-26 11:30,2,464,练车,464 练车 北岸 老公,"56 Monarch Ave, Hillcrest, Auckland, New Zealand",150,75,default,教练:老公
+2025-10-26 14:00,1,407,练车,407 练车 newlynn 老公,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-10-27 10:00,2,560,练车,560 练车 mtwell 老公 learner,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公
+2025-10-28 16:30,2,581,练车,581 练车 newlynn 老公,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公
+2025-10-29 17:00,2,561,练车,561 练车 silverdale 老公,"98 Harris Dr, Silverdale, New Zealand",150,75,default,教练:老公
+2025-10-30 11:00,1,560,考试,限制性考试 560 学员Mt wellington,,75,75,default,
+2025-10-30 17:00,1,582,练车,582 练车 gleninnes 老公,"VTNZ, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,default,教练:老公
+2025-11-01 10:00,1,593,练车,593 练车 albany 老公 PRA103,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:PRA103
+2025-11-01 11:00,1,592,练车,592 练车 albany 老公 RLK475,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:RLK475
+2025-11-01 12:00,1,566,练车,566 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-11-01 14:00,2,565,练车,565 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-11-02 14:00,1,323,练车,323 练车 newlynn 老公,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-11-03 13:30,1,596,练车,596 练车 gleninnes 老公 RBE644,"VTNZ, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,default,教练:老公 | 车牌:RBE644
+2025-11-03 15:00,2,578,练车,578 练车 newlynn 老公 FBP513,"2 Grahame Breed Dr, Three Kings, Auckland, New Zealand",150,75,default,教练:老公 | 车牌:FBP513
+2025-11-04 09:00,2,586,练车,586 练车 silverdale 老公 Lrw577,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",150,75,default,教练:老公 | 车牌:LRW577
+2025-11-04 12:00,2,565,练车,565 练车 albany 老公,"531A Glenfield Rd, Bayview, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-05 09:00,2,425,练车,425 练车 henderson 老公 教练车,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-05 12:00,2,599,练车,599 练车 westgate 老公 restricted MDD118,"5 Roy Maloney Dr, Henderson, Auckland, New Zealand",150,75,default,教练:老公 | 车牌:MDD118
+2025-11-06 13:00,1,601,练车,601 练车 northshore 老公 learner mtr480,"83 Bruce Rd, Glenfield, Auckland, New Zealand",75,75,default,教练:老公 | 车牌:MTR480
+2025-11-07 09:30,1,594,练车,594 练车 westgate 老公 FTN264,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公 | 车牌:FTN264
+2025-11-07 11:00,2,425,练车,425 练车 henderson 老公 教练车,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-08 10:00,2,565,练车,565 练车 albany 老公,"531A Glenfield Rd, Bayview, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-08 12:30,2,317,练车,317 练车 albany 老公,"AA Centre, 60 Constellation Dr, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公
+2025-11-09 09:00,2,608,练车,608 练车 newlynn 老公,"2 Crown Lynn Place, New Lynn, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-09 12:00,1,602,练车,602 练车 glenfield 老公 Qcu306,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公 | 车牌:QCU306
+2025-11-09 14:00,2,588,练车,588 练车 mtwell 老公 learner,"16 Mellefont Cl, East Tāmaki Heights, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-10 09:00,2,604,练车,604 练车 albany 老公 learner qhb108,"1412 Dairy Flat Hwy, Dairy Flat, New Zealand",150,75,default,教练:老公 | 车牌:QHB108
+2025-11-11 10:00,1.5,317,练车,317 练车 albany 老公,"6 Jomard Terrace, 6 Jomard Tce, Northcross, Auckland 0632, New Zealand",112.5,75,default,教练:老公
+2025-11-11 12:30,2,616,练车,616 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公
+2025-11-11 15:30,2,617,练车,617 练车 glenfield 老公 RFA162,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公 | 车牌:RFA162
+2025-11-12 08:30,1,462,练车,462 练车 albany 老公 qtz472,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:QTZ472
+2025-11-12 10:00,2,565,练车,565 练车 albany 老公,"531A Glenfield Rd, Bayview, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-12 13:00,2,618,练车,618 练车 albany learner 老公,"25 Rothesay Bay Rd, Rothesay Bay, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-13 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-13 13:00,1,601,练车,601 练车 northshore 老公 learner mtr480 带记录仪,"83 Bruce Rd, Glenfield, Auckland, New Zealand",75,75,default,教练:老公 | 车牌:MTR480
+2025-11-13 15:00,1,622,练车,622 练车 mtwell 老公,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公
+2025-11-14 12:00,2,619,练车,619 练车 albany 老公 教练车,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-15 10:00,1,578,练车,578 练车 newlynn 老公 FBP513,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:FBP513
+2025-11-15 13:00,2,558,练车,558 练车 mtwell 老公,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公
+2025-11-16 08:30,2,615,练车,615 练车 mtwell 老公 qkh213,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公 | 车牌:QKH213
+2025-11-16 11:00,1,609,练车,609 练车 albany 老公 NZB686,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:NZB686
+2025-11-16 13:00,2,448,练车,448 练车 老公 mtwell 教练车,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-16 15:30,2,630,练车,630 练车 老公 mtwell,"8 Claybrook Rd, Parnell, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-17 10:30,2,548,练车,548 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-11-18 07:30,2,548,练车,548 练车 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:老公
+2025-11-18 10:00,2,574,练车,574 练车 learner 老公 westgate learner,"1C Mamuku Dr, Massey, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-18 13:00,2,618,练车,618 练车 albany learner 老公,"25 Rothesay Bay Rd, Rothesay Bay, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-18 16:00,2,632,练车,632 练车 newlynn 老公 learner 教练车,"8A Rogan St, Mount Roskill, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-19 13:00,4,548,练车,548 练车 wiri 老公,"VTNZ Wiri, 103 Roscommon Rd, Wiri, Auckland 2104, New Zealand",300,75,default,教练:老公
+2025-11-20 10:00,1,633,练车,633 练车 albany 老公 pqu330,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:PQU330
+2025-11-20 11:30,1,312,陪考,312 陪考 saturn place 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-11-20 13:30,1,601,练车,601 练车 northshore 老公 learner mtr480,"83 Bruce Rd, Glenfield, Auckland, New Zealand",75,75,default,教练:老公 | 车牌:MTR480
+2025-11-20 15:15,1,548,陪考,548 陪考 northshore 老公,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公
+2025-11-21 09:30,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-21 12:00,1,625,练车,625 练车 老公 westgate kul122,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公 | 车牌:KUL122
+2025-11-22 10:00,1,623,练车,623 练车 glenfield 老公 lgg800,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:老公 | 车牌:LGG800
+2025-11-22 12:00,2,624,练车,624 练车 glenfield 老公 教练车,"3 Rosyth Ave, Bayswater, Auckland, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-23 10:00,2,618,考试,618 练车 albany learner 老公 收考试报名费,"25 Rothesay Bay Rd, Rothesay Bay, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-23 13:00,2,642,练车,642 练车 newlynn 老公 learner LYS630,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公 | 车牌:LYS630
+2025-11-26 10:00,2,448,练车,448 练车 老公 mtwell 教练车,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公 | 教练车
+2025-11-26 13:00,2,354,练车,354 练车 中区 老公 带个搭电器,"113 Vincent St, Auckland CBD, 奥克兰, 新西兰",150,75,default,教练:老公
+2025-11-27 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-27 13:00,1,601,练车,601 练车 northshore 老公 learner mtr480,"83 Bruce Rd, Glenfield, Auckland, New Zealand",75,75,default,教练:老公 | 车牌:MTR480
+2025-11-27 15:00,2,574,练车,574 练车 learner 老公 westgate learner,"1C Mamuku Dr, Massey, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-28 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-11-28 13:00,2,653,练车,653 练车 albany 老公 khr203,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公 | 车牌:KHR203
+2025-11-28 17:30,2,654,练车,654 练车 albany 老公 JASW,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:老公
+2025-11-29 10:00,1,578,练车,578 练车 newlynn 老公 FBP513,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:FBP513
+2025-11-29 12:00,2,523,练车,523 练车 mtwell 老公 RCP485,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公 | 车牌:RCP485
+2025-11-30 10:00,2,354,练车,354 练车 中区 老公,"113 Vincent St, Auckland CBD, 奥克兰, 新西兰",150,75,default,教练:老公
+2025-11-30 13:00,2,449,练车,449 练车 老公 westgate,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公
+2025-12-01 07:30,1,640,练车,640 练车 westgate 老公 JHE261,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公 | 车牌:JHE261
+2025-12-01 08:30,2,625,练车,625 练车 老公 westgate kul122,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公 | 车牌:KUL122
+2025-12-02 10:00,2,448,练车,448 练车 老公 mtwell 教练车,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:老公 | 教练车
+2025-12-02 13:00,1,659,练车,659 练车 gleninnes 老公,"65 Woodside Rd, Mount Eden, Auckland, New Zealand",75,75,default,教练:老公
+2025-12-03 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-03 13:00,1,661,练车,661 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-12-04 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-04 13:00,1,601,练车,601 练车 northshore 老公 learner mtr480,"83 Bruce Rd, Glenfield, Auckland, New Zealand",75,75,default,教练:老公 | 车牌:MTR480
+2025-12-05 07:00,2,587,练车,587 练车 new lynn 老公 教练车,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公 | 教练车
+2025-12-05 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-05 13:00,1,661,练车,661 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2025-12-06 15:00,2,659,练车,659 练车 gleninnes 老公,"VTNZ, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",150,75,default,教练:老公
+2025-12-07 10:00,2,394,练车,394 练车 westgate 老公,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:老公
+2025-12-07 13:00,2,354,练车,354 练车 中区 老公,"113 Vincent St, Auckland CBD, 奥克兰, 新西兰",150,75,default,教练:老公
+2025-12-09 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-09 14:00,1,660,练车,660 练车 albany 老公 HHB342,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:HHB342
+2025-12-10 14:00,1,664,练车,664 练车 道路熟悉 老公 教练车,"7 Kaipiho Ln, Albany, Auckland, New Zealand",75,75,default,教练:老公 | 教练车
+2025-12-11 11:00,1,653,练车,653 练车 albany 老公 khr203,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:KHR203
+2025-12-12 08:30,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-12 11:00,1,664,练车,664 练车 道路熟悉 老公 教练车,"7 Kaipiho Ln, Albany, Auckland, New Zealand",75,75,default,教练:老公 | 教练车
+2025-12-12 13:00,2,624,练车,624 练车 glenfield 老公,"3 Rosyth Ave, Bayswater, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-15 19:00,1,664,练车,664 练车 道路熟悉 老公 教练车,"7 Kaipiho Ln, Albany, Auckland, New Zealand",75,75,default,教练:老公 | 教练车
+2025-12-16 11:30,1,380,练车,380 练车 mtwell 老公,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公
+2025-12-16 12:30,1,380,陪考,380 陪考 mtwell 老公,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公
+2025-12-16 14:30,2,671,练车,671 练车 pukekohe 老公,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",150,75,default,教练:老公
+2025-12-17 11:00,1,638,练车,638 练车 albany 老公 RKE751,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:RKE751
+2025-12-17 13:00,2,662,练车,662 练车 learner 老公 教练车 150🔪,"349 Dominion Rd, Mount Eden, Auckland, New Zealand",150,75,explicit,教练:老公 | 教练车
+2025-12-18 10:00,2,473,练车,473 练车 newlynn 老公,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公
+2025-12-18 13:00,2,624,练车,624 练车 glenfield 老公,"3 Rosyth Ave, Bayswater, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-19 10:00,1,473,陪考,473 陪考 newlynn 老公,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公
+2025-12-20 08:00,2,576,练车,576 练车 newlynn 老公 RHB391,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",150,75,default,教练:老公 | 车牌:RHB391
+2025-12-22 12:30,1,449,练车,449 练车 老公 westgate,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:老公
+2025-12-22 14:00,2,676,练车,676 练车 westgate 大头 MTB810,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:大头 | 车牌:MTB810
+2025-12-22 19:00,1,681,练车,681 练车 gleninnes 大头,"VTNZ, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,default,教练:大头
+2025-12-23 10:00,2,682,练车,682 练车 westgate 大头 PSB988,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:大头 | 车牌:PSB988
+2025-12-23 13:00,1,675,练车,675 练车 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2025-12-24 10:00,2,624,练车,624 练车 glenfield 老公,"3 Rosyth Ave, Bayswater, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-24 13:00,2,662,练车,662 练车 learner 老公,"52A Holly St, Avondale, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-31 10:00,2,662,练车,662 练车 learner 老公,"52A Holly St, Avondale, Auckland, New Zealand",150,75,default,教练:老公
+2025-12-31 13:00,2,688,练车,688 练车 northshore 大头 MZJ537,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:大头 | 车牌:MZJ537
+2026-01-02 12:00,2,678,练车,678 练车 albany 大头 JNW773,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,教练:大头 | 车牌:JNW773
+2026-01-03 10:00,1,600,练车,600 练车 albany 大头 RAS740,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:RAS740
+2026-01-03 13:00,1,692,练车,692 练车 mtwell 大头 JHD656,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:JHD656
+2026-01-04 11:00,1,576,练车,576 练车 newlynn 老公 RHB391,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:老公 | 车牌:RHB391
+2026-01-05 13:00,1,703,练车,703 练车 albany 大头 raj830,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:RAJ830
+2026-01-06 13:00,1,600,练车,600 练车 albany 大头 RAS740,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:RAS740
+2026-01-06 14:00,1,659,练车,659 练车 albany 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2026-01-06 15:00,1,698,练车,698 练车 albany 大头 qbl716,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:QBL716
+2026-01-07 10:00,1,600,练车,600 练车 albany 大头 RAS740,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:RAS740
+2026-01-07 11:00,1,666,练车,666 练车 albany 大头,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头
+2026-01-07 13:00,1,711,练车,711 练车 albany 大头 教练车,"8 Merton Ave, Glenfield, Auckland, New Zealand",75,75,default,教练:大头 | 教练车
+2026-01-08 10:00,2,662,练车,662 练车 learner 老公,"Maya BBQ, 345 Dominion Rd, Mount Eden, Auckland 1024, New Zealand",150,75,default,教练:老公
+2026-01-08 19:00,1,705,练车,705 练车 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2026-01-09 10:00,1,682,练车,682 练车 newlynn 大头 PSB988,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:大头 | 车牌:PSB988
+2026-01-09 12:00,2,706,练车,706 练车 westgate 大头 RAH340,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:大头 | 车牌:RAH340
+2026-01-10 08:00,2,700,练车,700 练车 northshore 大头 ptp726,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,default,教练:大头 | 车牌:PTP726
+2026-01-10 12:00,1,508,练车,508 练车 pukekohe 大头 50🔪,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",50,50,explicit,教练:大头
+2026-01-10 13:00,2,713,练车,713 练车 pukekohe 大头 教练车,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",150,75,default,教练:大头 | 教练车
+2026-01-11 09:30,2,716,练车,716 练车 gleninnes 大头 prd347,"VTNZ, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",150,75,default,教练:大头 | 车牌:PRD347
+2026-01-12 10:00,2,425,练车,425 练车 中区 老公,"Epsom Baptist Church, 4 Inverary Ave, Epsom, Auckland 1023, New Zealand",150,75,default,教练:老公
+2026-01-13 11:00,1,712,练车,712 练车 newlynn 大头 rfj859,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:大头 | 车牌:RFJ859
+2026-01-13 13:00,1,500,练车,500 练车 newlynn 大头qnh171 70,"36 Aroha Ave, Sandringham, Auckland, New Zealand",75,75,default,教练:大头 | 车牌:QNH171
+2026-01-13 19:00,1,705,练车,705 练车 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2026-01-14 10:00,2,713,练车,713 练车 pukekohe 大头,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",150,75,default,教练:大头
+2026-01-14 13:00,2,603,练车,603 练车 howick 老公 learner,"11 Haseler Cres, Howick, Auckland, New Zealand",150,75,default,教练:老公
+2026-01-14 16:00,1,612,练车,612 练车 mtw 大头 qup12,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:QUP12
+2026-01-15 10:00,1,705,陪考,705 陪考 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2026-01-15 13:00,2,662,练车,662 练车 learner 老公,"Maya BBQ, 345 Dominion Rd, Mount Eden, Auckland 1024, New Zealand",150,75,default,教练:老公
+2026-01-15 19:00,1,612,练车,612 练车 mtw 大头 qup12,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:QUP12
+2026-01-17 10:00,1,725,练车,725 练车 albany 大头 learner mhh311,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:MHH311
+2026-01-18 14:30,1,612,练车,612 练车 westgate 大头 qup12,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:QUP12
+2026-01-18 15:30,1,697,练车,697 练车 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2026-01-19 11:00,1,729,练车,729 练车 mtw 大头 MHY683,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:MHY683
+2026-01-19 15:45,1,697,陪考,697 陪考 westgate 大头,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头
+2026-01-19 19:30,1,500,练车,500 练车 newlynn 大头qnh171 70,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:大头 | 车牌:QNH171
+2026-01-21 10:00,1,726,练车,726 练车 westgate 大头 pap474,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头 | 车牌:PAP474
+2026-01-21 13:00,2,603,练车,603 练车 howick 老公 learner,"11 Haseler Cres, Howick, Auckland, New Zealand",150,75,default,教练:老公
+2026-01-22 10:00,1,726,练车,726 练车 westgate 大头 ppa474,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,default,教练:大头 | 车牌:PPA474
+2026-01-22 12:00,2,508,练车,508 练车 pukekohe 大头 50🔪,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",50,25,explicit,教练:大头
+2026-01-23 12:30,1,726,练车,726 练车 northshore 大头 pap474,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:大头 | 车牌:PAP474
+2026-01-23 14:00,2,624,练车,624 练车 glenfield 老公,"3 Rosyth Ave, Bayswater, Auckland, New Zealand",150,75,default,教练:老公
+2026-01-27 10:00,1,719,练车,719 练车 albany 大头 rlm830,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:RLM830
+2026-01-28 14:00,2,passrite,练车,passrite 练车,"Passrite Driving Academy, 49 Neilson St, Onehunga, Auckland 1061, New Zealand",150,75,default,
+2026-01-29 10:00,2,425,练车,425 练车 henderson 老公,"30 Glen Norman Ave, Henderson, Auckland, New Zealand",150,75,default,教练:老公
+2026-01-30 08:00,2,passrite,考试,passrite考试,"Passrite Driving Academy, 49 Neilson St, Onehunga, Auckland 1061, New Zealand",150,75,default,
+2026-01-30 12:00,1,535,练车,535 练车 albany 老公 HWF969,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公 | 车牌:HWF969
+2026-01-31 12:15,1,727,练车,727 练车 albany 大头 learner mhh311,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:大头 | 车牌:MHH311
+2026-02-11 18:30,2,728,练车,728 练车 mtwell 大头 med50,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:大头 | 车牌:MED50
+2026-03-07 08:30,1,3011,练车,3011 练车 albany 大头 教练车 85🔪,"6 Kittiwake Dr, Schnapper Rock, Auckland, New Zealand",85,85,explicit,教练:大头 | 教练车
+2026-03-07 10:00,1,645,练车,645 练车 albany 大头 70🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",70,70,explicit,教练:大头
+2026-03-08 10:00,1,3007,练车,3007 练车 newlynn 大头 教练车,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:大头 | 教练车
+2026-03-08 12:00,1,3004,练车,3004 练车 pukekohe 大头,"VTNZ Pukekohe, 14 Subway Rd, Pukekohe 1023, New Zealand",75,75,default,教练:大头
+2026-03-08 14:30,1.5,3010,练车,3010 练车 mtw 牛 112.5🔪,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",112.5,75,explicit,教练:牛
+2026-03-09 09:30,1,323,练车,323 练车 newlynn 老公 50🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",50,50,explicit,教练:老公
+2026-03-09 11:00,2,3020,练车,3020 练车 northshore 牛 教练车 newmarket接送,"22 Park Ave, Grafton, Auckland, New Zealand",150,75,default,教练:牛 | 教练车 | 接送
+2026-03-11 08:30,1,3004,练车,3004 练车 glenfield 大头 50🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",50,50,explicit,教练:大头
+2026-03-11 10:00,1,3012,练车,3012 练车 albany 大头 手动挡 100🔪,"Albany Park and Ride, Elliot Rose Ave, Albany, Auckland 0632, New Zealand",100,100,explicit,教练:大头 | 手动挡
+2026-03-11 11:30,3,334,陪考,334 练车陪考 albany 大头 QQY628 150🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,50,explicit,教练:大头 | 车牌:QQY628
+2026-03-11 14:45,1,3025,陪考,3025 陪考 albany 牛 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛
+2026-03-11 18:00,1,3010,练车,3010 练车 newlynn 牛 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛
+2026-03-12 09:00,1,709,练车,709 练车 中区 牛 教练车 50🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",50,50,explicit,教练:牛 | 教练车
+2026-03-12 10:30,2,741,陪考,741 练车陪考 大头 newlynn nea331 145🔪 已给,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",145,72.5,explicit,教练:大头 | 车牌:NEA331
+2026-03-12 13:00,1,3014,练车,3014 练车 glenfield 大头 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:大头
+2026-03-12 18:30,1.5,3020,练车,3020 练车 newlynn 牛 教练车 newmarket接送 472.5￥,"22 Park Ave, Grafton, Auckland, New Zealand",112.5,75,default,教练:牛 | 教练车 | 接送
+2026-03-13 07:00,3,1071,陪考,1071￥3020 练车陪考 northshore 牛 教练车 newmarket接送,"22 Park Ave, Grafton, Auckland, New Zealand",225,75,default,教练:牛 | 教练车 | 接送
+2026-03-13 13:00,1,747,练车,747 练车 westgate 牛 限制性 70🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",70,70,explicit,教练:牛
+2026-03-13 14:40,1.5,585,练车,585 练车 Newlynn 大头 city接送 老学员 67.5🔪,"345 Queen St, Auckland CBD, Auckland, New Zealand",67.5,45,explicit,教练:大头 | 接送
+2026-03-14 09:00,2,3007,练车,3007 练车 newlynn 大头 教练车 city接送 170🔪,"Queens Residences Auckland, 8 Airedale St, Auckland CBD, Auckland 1010, New Zealand",170,85,explicit,教练:大头 | 教练车 | 接送
+2026-03-15 09:00,1,3018,练车,3018 练车 mtw 牛,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:牛
+2026-03-15 10:00,1,744,练车,744 练车 mtwell 大头,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头
+2026-03-15 12:00,1,3006,练车,3006 练车 newlynn 大头 教练车,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,default,教练:大头 | 教练车
+2026-03-15 13:30,1,3026,练车,3026 练车 限制性 牛 自己车 75🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",75,75,explicit,教练:牛 | 自己车
+2026-03-15 15:00,1,3015,练车,3015 练车 northshore 牛 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:牛
+2026-03-15 18:00,1.5,655,练车,655 练车 待定 牛 100🔪,"6 Hendon Ave, Mount Albert, Auckland, New Zealand",100,66.67,explicit,教练:牛
+2026-03-16 09:00,1,3015,练车,3015 练车 northshore 牛 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:牛
+2026-03-16 13:00,3.5,655,练车,655 练车 newlynn 牛 245🔪实收250🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",245,70,explicit,教练:牛
+2026-03-17 11:00,2,655,练车,655 练车 市区 牛 140🔪应收135🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",140,70,explicit,教练:牛
+2026-03-18 11:00,1,655,练车,655 练车 市区 牛 55🔪,"60 Hendon Ave, Mount Albert, Auckland, New Zealand",55,55,explicit,教练:牛
+2026-03-18 12:30,2,3019,陪考,3019 练车陪考 northshore 牛 150🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,explicit,教练:牛
+2026-03-18 14:30,1,3030,练车,3030 练车 albany 牛 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛
+2026-03-19 10:00,1,3033,陪练,3033 陪练 Newlynn 牛 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛
+2026-03-19 12:00,3,655,陪考,655 练车陪考 northshore 牛 210🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",210,70,explicit,教练:牛
+2026-03-19 18:20,2,3006,练车,3006 练车 newlynn 大头 教练车 170🔪,"4 Wagener Pl, Mount Albert, Auckland, New Zealand",170,85,explicit,教练:大头 | 教练车
+2026-03-20 10:00,3.5,655,陪考,655 练车陪考 newlynn 牛,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",262.5,75,default,教练:牛
+2026-03-20 14:30,2,3026,练车,3026 练车 限制性 牛 自己车 150🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",150,75,explicit,教练:牛 | 自己车
+2026-03-21 08:30,1,3035,练车,3035 练车 city 牛 75🔪,"Civic Car Park, 299 Queen St, Auckland, Auckland 1010, New Zealand",75,75,explicit,教练:牛
+2026-03-21 10:00,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-03-21 13:00,2,585,练车,585 练车 Newlynn 牛接送 老学员 67.5🔪,"64 Rockfield Rd, Penrose, Auckland, New Zealand",67.5,33.75,explicit,教练:牛 | 接送
+2026-03-21 15:30,1,717,练车,717 练车 westgate 牛 75🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,explicit,教练:牛
+2026-03-22 10:00,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-03-22 12:30,2,3031,练车,3031 练车 northshore 教练车 牛 170🔪,"11 Union St, Auckland CBD, Auckland, New Zealand",170,85,explicit,教练:牛 | 教练车
+2026-03-23 07:00,1.5,3025,陪考,3025 陪考 albany 牛 125🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",125,83.33,explicit,教练:牛
+2026-03-24 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-03-24 13:00,2,3007,练车,3007 练车 newlynn 大头 教练车 city接送 127.5🔪,"Queens Residences Auckland, 8 Airedale St, Auckland CBD, Auckland 1010, New Zealand",127.5,63.75,explicit,教练:大头 | 教练车 | 接送
+2026-03-24 15:30,2,3006,练车,3006 练车 newlynn 大头 教练车 170🔪,"4 Wagener Pl, Mount Albert, Auckland, New Zealand",170,85,explicit,教练:大头 | 教练车
+2026-03-24 18:00,1,692,练车,692 练车 mtwell 大头 JHD656 280🔪四小时,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",280,280,explicit,教练:大头 | 车牌:JHD656
+2026-03-25 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-03-25 13:00,1,312,陪考,312 陪考 saturn place 牛,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:牛
+2026-03-25 18:30,1,692,练车,692 练车 mtwell 大头 JHD656,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:大头 | 车牌:JHD656
+2026-03-26 09:00,2,3027,练车,3027 练车 机场 牛 三个人 教练车 清理后座 170🔪,"Pullman Auckland Hotel & Apartments, Corner Waterloo Quadrant, & Princes Street, Auckland 1010, New Zealand",170,85,explicit,教练:牛 | 教练车
+2026-03-26 12:00,2,692,练车,692 练车 mtwell 大头 JHD656,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,default,教练:大头 | 车牌:JHD656
+2026-03-26 14:30,1,3037,练车,3037 练车 newlynn 牛 75🔪 lmz407,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛 | 车牌:LMZ407
+2026-03-26 16:30,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-03-27 07:45,1,3025,陪考,3025 陪考 albany 牛 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛
+2026-03-27 12:30,1.5,3007,练车,3007 练车 northshore 大头 教练车 127.5🔪,"AUT North Campus, 90 Akoranga Dr, Northcote, Auckland 0627, New Zealand",127.5,85,explicit,教练:大头 | 教练车
+2026-03-27 14:30,2,3026,练车,3026 练车 限制性 牛 自己车 150🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",150,75,explicit,教练:牛 | 自己车
+2026-03-27 18:00,1,3029,练车,3029 练车 albany 牛 75🔪 LCT99,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛 | 车牌:LCT99
+2026-03-28 09:00,2,3035,练车,3035 练车 city 牛 150🔪,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,explicit,教练:牛
+2026-03-28 13:00,1,744,练车,744 练车 newlynn 大头 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:大头
+2026-03-28 18:30,1.5,585,练车,585 练车 Newlynn 牛接送 老学员 67.5🔪,"335 Sandringham Rd, Sandringham, Auckland, New Zealand",67.5,45,explicit,教练:牛 | 接送
+2026-03-29 13:30,1,3039,练车,3039 练车 northshore 牛 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:牛
+2026-03-29 17:00,1.5,651,练车,651 练车 市区 牛 75🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",75,50,explicit,教练:牛
+2026-03-31 11:30,1.25,3039,考试,3039 练车考试 northshore 牛 150🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,120,explicit,教练:牛
+2026-03-31 14:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-01 10:00,2,3039,考试,3039 练车考试 wiri 牛 150🔪,"VTNZ Wiri, 103 Roscommon Rd, Wiri, Auckland 2104, New Zealand",150,75,explicit,教练:牛
+2026-04-02 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-02 13:30,2,3042,练车,3042 练车 abcmanukau 牛 150🔪,"VTNZ Manukau, 132 Cavendish Dr, Papatoetoe, Auckland 2104, New Zealand",150,75,explicit,教练:牛
+2026-04-02 17:00,1.5,651,练车,651 练车 市区 牛 75🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",75,50,explicit,教练:牛
+2026-04-03 09:00,2,662,练车,662 练车 learner 老公 150🔪,"Maya BBQ, 345 Dominion Rd, Mount Eden, Auckland 1024, New Zealand",150,75,explicit,教练:老公
+2026-04-03 12:00,2,585,练车,585 练车 Newlynn 大头 接送 老学员 90🔪,"64 Rockfield Rd, Penrose, Auckland, New Zealand",90,45,explicit,教练:大头 | 接送
+2026-04-03 15:00,1,3045,练车,3045 练车 panmure 手动挡 牛 100🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",100,100,explicit,教练:牛 | 手动挡
+2026-04-04 10:00,1,3043,练车,3043 练车 northshore 牛 教练车 85🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",85,85,explicit,教练:牛 | 教练车
+2026-04-04 13:00,1,3048,练车,3048 练车 newlynn 牛 75🔪 qpk269,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛 | 车牌:QPK269
+2026-04-04 14:30,1,3047,练车,3047 练车 westgate 限制性 75🔪已转,"113 Totara Rd, Whenuapai, Auckland, New Zealand",75,75,explicit,
+2026-04-05 09:10,1,549,练车,549 练车 missionbay 牛 强化提升课 270🔪,"42 Melanesia Rd, Kohimarama, Auckland, New Zealand",270,270,explicit,教练:牛
+2026-04-05 10:30,1,3035,练车,3035 练车 city 牛 75🔪,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,explicit,教练:牛
+2026-04-05 12:00,2,3026,练车,3026 练车 限制性 牛 自己车 150🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",150,75,explicit,教练:牛 | 自己车
+2026-04-05 14:30,2,3047,练车,3047 练车 westgate 限制性 150🔪,"113 Totara Rd, Whenuapai, Auckland, New Zealand",150,75,explicit,
+2026-04-06 10:00,2,3047,练车,3047 练车 westgate 限制性 150🔪,"113 Totara Rd, Whenuapai, Auckland, New Zealand",150,75,explicit,
+2026-04-08 11:00,1,3002,练车,3002 练车 takanini 牛 75🔪,"Vtnz Takanini, 2-14 Spartan Rd, Takanini 2105, New Zealand",75,75,explicit,教练:牛
+2026-04-08 13:00,2,3047,练车,3047 练车 westgate 限制性 150🔪,"113 Totara Rd, Whenuapai, Auckland, New Zealand",150,75,explicit,
+2026-04-09 08:50,1,3053,练车,3053 练车 westgate 50🔪 牛,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",50,50,explicit,教练:牛
+2026-04-09 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-09 13:00,1,3047,练车,3047 练车 westgate 限制性 150🔪,"113 Totara Rd, Whenuapai, Auckland, New Zealand",150,150,explicit,
+2026-04-09 15:30,1,3051,练车,3051 练车 albany 牛 50🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",50,50,explicit,教练:牛
+2026-04-09 17:00,1,xhs002,练车,xhs002 练车 westgate 牛 75🔪 pyc842,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,explicit,教练:牛 | 车牌:PYC842
+2026-04-10 09:30,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-10 12:30,2,3047,陪考,3047 陪考 westgate 限制性 150🔪,"113 Totara Rd, Whenuapai, Auckland, New Zealand",150,75,explicit,
+2026-04-11 09:00,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-04-11 13:00,1,549,练车,549 练车 missionbay 牛 已付款,,75,75,default,教练:牛
+2026-04-11 14:30,1.5,3026,练车,3026 练车 限制性 牛 自己车 112.5🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",112.5,75,explicit,教练:牛 | 自己车
+2026-04-13 11:00,2,662,练车,662 练车 learner 老公 150🔪,"Maya BBQ, 345 Dominion Rd, Mount Eden, Auckland 1024, New Zealand",150,75,explicit,教练:老公
+2026-04-13 13:30,2,682,陪考,682 练车陪考 westgate 大头 PSB988,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,default,教练:大头 | 车牌:PSB988
+2026-04-14 08:00,1,3002,练车,3002 练车 newlynn 牛 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛
+2026-04-14 10:00,2,3042,练车,3042 练车 newlynn 牛 170🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",170,85,explicit,教练:牛
+2026-04-14 12:30,1,645,练车,645 练车 westgate 大头 70🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",70,70,explicit,教练:大头
+2026-04-15 10:00,1,3014,练车,3014 练车 glenfield 大头 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:大头
+2026-04-15 11:30,1,543,练车,543 练车 takapuna 教练车 80🔪 牛,"Lake Pupuke Tennis Club, 38 Pupuke Rd, Hillcrest, Auckland 0622, New Zealand",80,80,explicit,教练:牛 | 教练车
+2026-04-15 13:00,1,3051,练车,3051 练车 albany 牛 50🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",50,50,explicit,教练:牛
+2026-04-16 07:45,1,3025,陪考,3025 陪考 albany 牛 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛
+2026-04-16 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-17 08:00,1,3002,练车,3002 练车 newlynn 牛 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛
+2026-04-17 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-17 13:00,2,3026,练车,3026 练车 限制性 牛 自己车 150🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",150,75,explicit,教练:牛 | 自己车
+2026-04-18 09:00,2,3049,练车,3049 练车 takanini 限制性 牛 150🔪,"Vtnz Takanini, 2-14 Spartan Rd, Takanini 2105, New Zealand",150,75,explicit,教练:牛
+2026-04-19 15:00,1,3066,练车,3066 练车 albany 牛 75🔪 RDJ719,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,教练:牛 | 车牌:RDJ719
+2026-04-20 10:00,1,3036,练车,3036 练车 blockhousebay 牛 教练车 85🔪,10 Bellamy place blockhouse bay,85,85,explicit,教练:牛 | 教练车
+2026-04-21 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-21 13:00,1,3067,练车,3067 练车 mtw 教练车 牛,"18 Hutchinsons Rd, Bucklands Beach, Auckland, New Zealand",75,75,default,教练:牛 | 教练车
+2026-04-22 10:00,2,491,练车,491 换驾照➕练车 170🔪,,170,85,explicit,
+2026-04-23 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-23 13:00,1,3070,练车,3070 练车 wiri 75🔪,"VTNZ Wiri, 103 Roscommon Rd, Wiri, Auckland 2104, New Zealand",75,75,explicit,
+2026-04-23 16:30,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-04-24 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-24 13:00,2,584,练车,584 练车 mtw 150🔪 教练车 牛,"39 Victoria Ave, Remuera, Auckland, New Zealand",150,75,explicit,教练:牛 | 教练车
+2026-04-25 09:00,1,3032,练车,3032 练车 教练车 牛 85🔪,"18 St Martins Ln, Grafton, Auckland, New Zealand",85,85,explicit,教练:牛 | 教练车
+2026-04-25 12:00,1,3071,练车,3071 练车 silverdale 限制性 教练车 85🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",85,85,explicit,教练车
+2026-04-25 13:00,1,3057,练车,3057 练车 silverdale 牛 75🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,教练:牛
+2026-04-25 14:30,2,3068,练车,3068 练车 限制性 albany 教练车,,150,75,default,教练车
+2026-04-26 10:00,1.5,3026,练车,3026 练车 限制性 牛 自己车 112.5🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",112.5,75,explicit,教练:牛 | 自己车
+2026-04-26 13:00,1,3049,练车,3049 练车 takanini 限制性 牛 75🔪,"Vtnz Takanini, 2-14 Spartan Rd, Takanini 2105, New Zealand",75,75,explicit,教练:牛
+2026-04-26 14:30,1,3048,练车,3048 练车 newlynn 牛 75🔪 qpk269,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:牛 | 车牌:QPK269
+2026-04-27 09:00,1,3015,练车,3015 练车 northshore 牛 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,教练:牛
+2026-04-27 10:00,1,549,练车,549 练车 northshore 牛 已付款,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,default,教练:牛
+2026-04-28 09:15,1,549,考试,549 考试 northshore 牛 70🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",70,70,explicit,教练:牛
+2026-04-28 10:30,1,3078,练车,3078 练车 mtw 75🔪,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,explicit,
+2026-04-29 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-04-29 13:00,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-04-30 10:00,2,3071,练车,3071 练车 silverdale 限制性 教练车 170🔪,"15 Sunnyside Rd, Coatesville, New Zealand",170,85,explicit,教练车
+2026-04-30 13:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-01 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-01 13:00,2,3067,练车,3067 练车 mtw 教练车 牛,"18 Hutchinsons Rd, Bucklands Beach, Auckland, New Zealand",150,75,default,教练:牛 | 教练车
+2026-05-02 08:00,2,3045,练车,3045 练车 panmure 手动挡 牛 200🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",200,100,explicit,教练:牛 | 手动挡
+2026-05-02 12:30,1,3057,练车,3057 练车 silverdale 牛 75🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,教练:牛
+2026-05-02 14:00,1,3056,练车,3056 练车 takapuna 教练车 牛 85🔪,"Takapuna Rugby Football Club, 44B Northcote Rd, Northcote, Auckland 0627, New Zealand",85,85,explicit,教练:牛 | 教练车
+2026-05-02 15:30,1.5,585,考试,585 考试 Newlynn 大头 接送 老学员 67.5🔪,"64 Rockfield Rd, Penrose, Auckland, New Zealand",67.5,45,explicit,教练:大头 | 接送
+2026-05-03 11:00,1.5,3026,练车,3026 练车 限制性 牛 自己车 112.5🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",112.5,75,explicit,教练:牛 | 自己车
+2026-05-03 13:00,2,3068,练车,3068 练车 限制性 albany 教练车,"13 View Rd, Wairau Valley, Auckland, New Zealand",150,75,default,教练车
+2026-05-04 10:45,1,3049,陪考,3049 陪考 takanini 限制性 牛 75🔪,"Vtnz Takanini, 2-14 Spartan Rd, Takanini 2105, New Zealand",75,75,explicit,教练:牛
+2026-05-04 13:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-05 13:30,2,3084,练车,3084 练车 限制性 教练车 170🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",170,85,explicit,教练车
+2026-05-05 20:00,1.5,3032,练车,3032 验车 教练车 牛 75🔪,"18 St Martins Ln, Grafton, Auckland, New Zealand",75,50,explicit,教练:牛 | 教练车
+2026-05-06 13:00,2,651,练车,651 练车 市区 牛 100🔪,"129A Sunnyside Rd, Sunnyvale, Auckland, New Zealand",100,50,explicit,教练:牛
+2026-05-07 10:00,1,740,练车,740 练车 教练车 东区 60🔪,"8 Belcoo Cres, East Tāmaki, Auckland, New Zealand",60,60,explicit,教练车
+2026-05-07 12:30,1,3075,练车,3075 练车 北岸 教练车 85🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",85,85,explicit,教练车
+2026-05-07 14:00,1,3085,练车,3085 练车 st johns 教练车 85🔪,"16 Stonemason Ave, Stonefields, Auckland, New Zealand",85,85,explicit,教练车
+2026-05-09 08:30,1.5,585,练车,585 练车 Newlynn 牛接送 老学员 67.5🔪,"64 Rockfield Rd, Penrose, Auckland, New Zealand",67.5,45,explicit,教练:牛 | 接送
+2026-05-09 12:00,2,3083,练车,3083 练车 限制性 自己车 150🔪 QKN891,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",150,75,explicit,自己车 | 车牌:QKN891
+2026-05-09 14:00,1,3087,练车,3087 练车 mtw zjc 75🔪 rb216,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,explicit,车牌:RB216
+2026-05-09 15:30,1,3032,练车,3032 验车 教练车 牛 75🔪,"18 St Martins Ln, Grafton, Auckland, New Zealand",75,75,explicit,教练:牛 | 教练车
+2026-05-10 10:00,2,3075,练车,3075 练车 北岸 教练车 170🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",170,85,explicit,教练车
+2026-05-11 10:30,1,3093,练车,3093 练车 自己车 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,自己车
+2026-05-12 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-12 13:30,2,3084,练车,3084 练车 限制性 150🔪,"172 Arran Point Pde, Orewa, New Zealand",150,75,explicit,
+2026-05-13 09:30,1,3096,练车,3096 练车 westgate 75🔪 jes26,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",75,75,explicit,车牌:JES26
+2026-05-13 11:00,3,585,考试,585 考试 Newlynn 大头 接送 老学员 167.5🔪 考试时间12.45,"64 Rockfield Rd, Penrose, Auckland, New Zealand",167.5,55.83,explicit,教练:大头 | 接送
+2026-05-13 14:00,1,740,练车,740 练车 中区 50🔪,"64 Rockfield Rd, Penrose, Auckland, New Zealand",50,50,explicit,
+2026-05-14 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-15 14:00,1,3100,练车,3100 练车 albany 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,
+2026-05-16 14:00,2,3075,练车,3075 练车 北岸 教练车 170🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",170,85,explicit,教练车
+2026-05-16 16:30,1,wa3001,练车,wa3001 练车 教练车 85🔪,"206 Clark Rd, Hobsonville, Auckland, New Zealand",85,85,explicit,教练车
+2026-05-17 10:00,1.5,585,练车,585 练车 Newlynn 大头 city接送 老学员 67.5🔪,"147 Victoria St West, Auckland CBD, Auckland, New Zealand",67.5,45,explicit,教练:大头 | 接送
+2026-05-17 13:00,1,3061,练车,3061 练车 albany 75🔪 kzm447,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,车牌:KZM447
+2026-05-18 10:00,1,3107,练车,3107 练车 albany 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,
+2026-05-18 11:30,1,3106,练车,3106 练车 glenfield 75🔪 GTQ742,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,车牌:GTQ742
+2026-05-19 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-19 13:00,1,3057,练车,3057 练车 silverdale 牛 75🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,教练:牛
+2026-05-19 14:00,1,3104,练车,3104 silverdale 练车 75🔪 pql159,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,车牌:PQL159
+2026-05-20 09:30,1,744,练车,744 练车 newlynn 大头 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:大头
+2026-05-20 10:30,2,712,练车,712 练车 newlynn 大头 rfj859 140🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",140,70,explicit,教练:大头 | 车牌:RFJ859
+2026-05-20 13:30,1,3106,练车,3106 练车 glenfield 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-05-21 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-05-21 13:00,2,3075,练车,3075 练车 北岸 教练车 170🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",170,85,explicit,教练车
+2026-05-22 14:00,2,3075,练车,3075 练车 北岸 教练车 170🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",170,85,explicit,教练车
+2026-05-22 17:00,1,577,练车,577 练车 albany 70 已付,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,
+2026-05-23 12:00,2,577,练车,577 练车 albany 140 已付,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,
+2026-05-24 10:00,2,585,练车,585 练车 Newlynn 大头 city接送 老学员 90🔪,"345 Queen St, Auckland CBD, Auckland, New Zealand",90,45,explicit,教练:大头 | 接送
+2026-05-24 12:30,2,3075,练车,3075 练车 北岸 教练车 170🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",170,85,explicit,教练车
+2026-05-25 07:30,2,577,陪考,577 陪考练车 albany 140,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",150,75,default,
+2026-05-25 10:00,2,3075,练车,3075 练车 北岸 150🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",150,75,explicit,
+2026-05-26 10:00,1,740,练车,740 练车 wiri 50🔪,"VTNZ Wiri, 103 Roscommon Rd, Wiri, Auckland 2104, New Zealand",50,50,explicit,
+2026-05-26 12:00,2,3067,练车,3067 练车 东区 教练车 牛,"18 Hutchinsons Rd, Bucklands Beach, Auckland, New Zealand",150,75,default,教练:牛 | 教练车
+2026-05-28 12:15,1,712,练车,712 练车 newlynn 大头 rfj859 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,教练:大头 | 车牌:RFJ859
+2026-05-28 14:00,1,3107,练车,3107 练车 albany 75🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,explicit,
+2026-05-30 14:30,2,3026,练车,3026 练车 限制性 牛 自己车 150🔪,"128 Vodanovich Rd, Te Atatū South, Auckland, New Zealand",150,75,explicit,教练:牛 | 自己车
+2026-05-31 09:00,2,3075,练车,3075 练车 北岸 自己车 150🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",150,75,explicit,自己车
+2026-05-31 11:30,2,3084,练车,3084 练车 限制性 150🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,explicit,
+2026-06-01 13:00,1,3057,练车,3057 练车 silverdale 牛 75🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,教练:牛
+2026-06-02 10:00,2,3075,练车,3075 练车 北岸 150🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",150,75,explicit,
+2026-06-03 13:30,1,sms8869,练车,sms8869 练车 glenfield 85🔪 rbj460,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",85,85,explicit,车牌:RBJ460
+2026-06-04 13:00,2,3075,练车,3075 练车 北岸 150🔪,"61 Totaravale Dr, Tōtara Vale, Auckland, New Zealand",150,75,explicit,
+2026-07-18 13:00,2,3039,练车,3039 练车 epsom 牛 170🔪,"24 Claude Rd, Epsom, Auckland, New Zealand",170,85,explicit,教练:牛
+2026-07-20 10:00,2,3039,练车,3039 练车 epsom 牛 170🔪,"24 Claude Rd, Epsom, Auckland, New Zealand",170,85,explicit,教练:牛
+2026-07-21 14:30,2,sms4841,练车,sms4841 练车 silverdale 限制性 150🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",150,75,explicit,
+2026-07-22 09:00,2,3039,练车,3039 练车 albany 牛 170🔪,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",170,85,explicit,教练:牛
+2026-07-28 10:00,1,sms8869,练车,sms8869 练车 glenfield 85🔪 rbj460,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",85,85,explicit,车牌:RBJ460
+2026-07-28 12:30,1,3116,练车,3116 练车 倒霉路 75🔪,"428 Dominion Rd, Mount Eden, Auckland, New Zealand",75,75,explicit,
+2026-07-28 14:00,1,3045,练车,3045 练车 panmure 教练车 85🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",85,85,explicit,教练车
+2026-07-29 09:00,2,sms4841,练车,sms4841 练车 glenfield 限制性 150🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,explicit,
+2026-07-29 11:30,1,312,陪考,312 陪考 saturn place 老公,"VTNZ Saturn Place, 5 Saturn Pl, Rosedale, Auckland 0632, New Zealand",75,75,default,教练:老公
+2026-07-29 14:00,1,3109,练车,3109 练车 northshore 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-07-30 10:00,2,3115,练车,3115 练车 silverdale 教练车 170🔪,"100 Colonial Dr, Silverdale, New Zealand",170,85,explicit,教练车
+2026-07-31 13:00,1,3121,练车,3121 练车 glenfield 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-08-01 10:00,1,3117,练车,3117 练车 city 教练车 85🔪,"128 Anzac Ave, Auckland CBD, Auckland, New Zealand",85,85,explicit,教练车
+2026-08-01 11:15,1,621,练车,621 练车 city 85🔪,"207 Federal St, Auckland CBD, Auckland, New Zealand",85,85,explicit,
+2026-08-02 10:00,2,3068,练车,3068 练车 限制性 albany 教练车,"13 View Rd, Wairau Valley, Auckland, New Zealand",150,75,default,教练车
+2026-08-02 12:30,1,3121,练车,3121 练车 glenfield 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-08-04 12:00,1,sms8869,练车,sms8869 练车 glenfield 75🔪 rbj460,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,车牌:RBJ460
+2026-08-04 14:00,2,3045,练车,3045 练车 panmure 教练车 170🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",170,85,explicit,教练车
+2026-08-05 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-08-05 14:30,1,3007,练车,3007 练车 northshore 大头 教练车 85🔪,"AUT North Campus, 90 Akoranga Dr, Northcote, Auckland 0627, New Zealand",85,85,explicit,教练:大头 | 教练车
+2026-08-06 10:00,2,3115,练车,3115 练车 silverdale 教练车 170🔪,"100 Colonial Dr, Silverdale, New Zealand",170,85,explicit,教练车
+2026-08-06 12:30,1,3123,练车,3123 练车 silverdale 75🔪,"VTNZ - Silverdale, 5 Furnace Pl, Silverdale 0932, New Zealand",75,75,explicit,
+2026-08-07 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-08-07 12:30,1,3122,练车,3122 练车 gleninnes 75🔪 qsl232,"VTNZ Glen Innes, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,explicit,车牌:QSL232
+2026-08-07 14:00,1,3129,练车,3129 练车 newlynn 75🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",75,75,explicit,
+2026-08-08 09:00,1,3120,练车,3120 练车 albany 50🔪,"9 Peony Mews, Oteha, Auckland, New Zealand",50,50,explicit,
+2026-08-08 10:30,1,3124,练车,3124 练车 takapuna 教练车 85🔪,"1 The Promenade, Takapuna, Auckland, New Zealand",85,85,explicit,教练车
+2026-08-09 12:30,1,513,练车,513 练车 mtw 老公 lmu15,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,default,教练:老公 | 车牌:LMU15
+2026-08-10 10:00,1,3122,练车,3122 练车 gleninnes 75🔪 qsl232,"VTNZ Glen Innes, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,explicit,车牌:QSL232
+2026-08-10 11:30,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-08-10 14:00,1,3130,练车,3130 练车 northshore 教练车 85🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",85,85,explicit,教练车
+2026-08-11 11:30,1,3122,陪考,3122 陪考 gleninnes 75🔪 qsl232,"VTNZ Glen Innes, 139 Apirana Ave, Glen Innes, Auckland 1072, New Zealand",75,75,explicit,车牌:QSL232
+2026-08-11 14:00,2,3045,练车,3045 练车 panmure 教练车 170🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",170,85,explicit,教练车
+2026-08-12 10:00,2,709,练车,709 练车 中区 牛 教练车 100🔪,"5 Sarawia St, Newmarket, Auckland, New Zealand",100,50,explicit,教练:牛 | 教练车
+2026-08-12 12:30,2,3125,练车,3125 练车 ct 教练车170🔪,"Parliament St, Auckland CBD, Auckland, New Zealand",170,85,explicit,教练车
+2026-08-12 14:45,1,3130,练车,3130 练车 northshore 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-08-13 08:30,1,3130,练车,3130 练车 northshore 75🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",75,75,explicit,
+2026-08-13 12:30,1,3007,练车,3007 练车 northshore 大头 教练车 85🔪,"AUT North Campus, 90 Akoranga Dr, Northcote, Auckland 0627, New Zealand",85,85,explicit,教练:大头 | 教练车
+2026-08-14 10:00,1,3128,练车,3128 练车 ct 教练车 85🔪,"Lorne St, Auckland CBD, Auckland, New Zealand",85,85,explicit,教练车
+2026-08-14 12:20,1,3007,陪考,3007 陪考 牛 教练车 85🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",85,85,explicit,教练:牛 | 教练车
+2026-08-14 14:00,2,3115,练车,3115 练车 silverdale 教练车 170🔪,"100 Colonial Dr, Silverdale, New Zealand",170,85,explicit,教练车
+2026-08-15 10:00,1,733,练车,733 练车 mtw 75🔪 hqm696,"VTNZ, 5 Sylvia Park Rd, Mount Wellington, Auckland 1060, New Zealand",75,75,explicit,车牌:HQM696
+2026-08-16 10:00,2,3117,练车,3117 练车 westagte 教练车 170🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",170,85,explicit,教练车
+2026-08-17 10:00,1,559,练车,559 练车 westgate 老公 NFS887 70🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",70,70,explicit,教练:老公 | 车牌:NFS887
+2026-08-18 10:00,2,3118,练车,3118 练车 westgate 150🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,explicit,
+2026-08-20 14:00,2,3045,练车,3045 练车 panmure 教练车 170🔪,"56 Pleasant View Rd, Panmure, Auckland, New Zealand",170,85,explicit,教练车
+2026-09-10 14:00,1,3050,练车,3050 练车 newlynn 教练车 85🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",85,85,explicit,教练车
+2026-09-16 13:00,2,3131,练车,3131 练车 westgate 150🔪,"VTNZ - Westgate, 6 Pinot Ln, Westgate, Auckland 0614, New Zealand",150,75,explicit,
+2026-09-17 14:00,1,3050,练车,3050 练车 newlynn 教练车 85🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",85,85,explicit,教练车
+2026-09-19 09:00,2,3119,练车,3119 练车 northshore 150🔪,"VTNZ North Shore, 120 Sunnybrae Rd, Hillcrest, Auckland 0627, New Zealand",150,75,explicit,
+2026-09-23 11:00,1,3050,练车,3050 练车 newlynn 教练车 85🔪,"Vtnz New Lynn, 46 Portage Rd, New Lynn, Auckland 0600, New Zealand",85,85,explicit,教练车

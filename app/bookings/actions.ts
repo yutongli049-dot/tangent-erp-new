@@ -368,6 +368,7 @@ export async function quickCreateDrivingBooking(formData: FormData) {
     needPickup: formData.get("needPickup") === "true",
     pickupAddress: formData.get("pickupAddress") as string,
     plateNumber: formData.get("plateNumber") as string,
+    coach: (formData.get("coach") as string) || null,
   };
 
   if (!identifier || !dateStr) return { error: "信息不完整" };

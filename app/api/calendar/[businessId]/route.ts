@@ -1,3 +1,7 @@
+import {
+  formatSineIcsDescription,
+  formatSineIcsSummary,
+} from "@/lib/driving-booking-text";
 import { createClient } from "@supabase/supabase-js";
 import ical from "ical-generator";
 import { formatDualTime } from "@/lib/timezone";
@@ -33,15 +37,16 @@ export async function GET(
     return new Response("Database Error", { status: 500 });
   }
 
+  const isSine = businessId === "sine";
+
   const calendar = ical({
-    name: `Tangent Schedule (${businessId.toUpperCase()})`,
+    name: isSine ? "Sine Driving School" : `Tangent Schedule (${businessId.toUpperCase()})`,
     prodId: { company: "Tangent ERP", product: "Calendar", language: "EN" },
     timezone: "UTC",
     ttl: 900,
   });
 
   for (const booking of bookings || []) {
-    // 数据库 ISO 字符串 → 绝对 UTC Date（订阅端不发生偏移）
     const start = new Date(booking.start_time);
     const end = new Date(booking.end_time);
     if (isNaN(start.getTime()) || isNaN(end.getTime())) continue;
@@ -50,29 +55,58 @@ export async function GET(
     const studentCode = student?.student_code || "无编号";
     const studentName = student?.name || "未知学员";
     const teacherName = booking.teacher || student?.teacher || "无老师";
-    const notes = booking.notes || "无";
+    const notes = booking.notes || "";
     const statusLabel = booking.status === "completed" ? "已完成" : "待进行";
-
-    const summaryText = `${studentCode} ${studentName} ${teacherName}`;
     const placeLabel = booking.location?.trim() || "未指定";
     const locationWithTz = `${placeLabel} | ${formatDualTime(booking.start_time)}`;
+    const metadata = (booking.metadata as Record<string, unknown> | null) ?? {};
+
+    let summaryText: string;
+    let descriptionText: string;
+
+    if (isSine) {
+      summaryText = formatSineIcsSummary({
+        subject: booking.subject,
+        studentCode,
+        studentName,
+        metadata,
+        actualRate: booking.actual_rate,
+        duration: booking.duration,
+      });
+      descriptionText = formatSineIcsDescription({
+        subject: booking.subject,
+        studentCode,
+        studentName,
+        location: booking.location,
+        notes,
+        status: booking.status,
+        metadata,
+        actualRate: booking.actual_rate,
+        duration: booking.duration,
+        startTimeLabel: formatDualTime(booking.start_time),
+      });
+    } else {
+      summaryText = `${studentCode} ${studentName} ${teacherName}`;
+      descriptionText = [
+        `学员: ${studentName}`,
+        `编号: ${studentCode}`,
+        `老师: ${teacherName}`,
+        `地点: ${placeLabel}`,
+        `备注: ${notes || "无"}`,
+        `状态: ${statusLabel}`,
+      ].join("\n");
+    }
 
     calendar.createEvent({
       id: booking.id,
       start,
       end,
       summary: summaryText,
-      description: [
-        `学员: ${studentName}`,
-        `编号: ${studentCode}`,
-        `老师: ${teacherName}`,
-        `地点: ${booking.location || "未指定"}`,
-        `备注: ${notes}`,
-        `状态: ${statusLabel}`,
-      ].join("\n"),
+      description: descriptionText,
       location: locationWithTz,
       lastModified: new Date(),
-    });  }
+    });
+  }
 
   return new Response(calendar.toString(), {
     headers: {

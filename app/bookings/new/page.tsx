@@ -13,11 +13,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DualTimezonePreview } from "@/components/DualTimezoneTime";
 import { CreatableCombobox } from "@/components/CreatableCombobox";
 import { getTodayInNZ } from "@/lib/timezone";
+import {
+  DRIVING_COACHES,
+  DRIVING_SUBJECTS,
+  parseDrivingBookingText,
+  type DrivingCoach,
+} from "@/lib/driving-booking-text";
 import {
   fetchFormSuggestions,
   mergeLocationOptions,
@@ -218,12 +224,14 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   
+  const [magicInput, setMagicInput] = useState("");
   const [identifier, setIdentifier] = useState(""); 
   const [date, setDate] = useState(() => getTodayInNZ());
   const [time, setTime] = useState("10:00");
   const [duration, setDuration] = useState("1");
   const [location, setLocation] = useState("");
-  const [subject, setSubject] = useState("限制性 (Restricted)"); 
+  const [subject, setSubject] = useState<string>(DRIVING_SUBJECTS[1]); // 限制性练车
+  const [coach, setCoach] = useState<DrivingCoach | "">("");
   const [notes, setNotes] = useState("");
   
   const [repeatMode, setRepeatMode] = useState("none");
@@ -232,7 +240,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [endDate, setEndDate] = useState("");
   const [weeklySchedule, setWeeklySchedule] = useState([{ dayOfWeek: "1", time: "10:00" }]);
   const [customIntervalWeeks, setCustomIntervalWeeks] = useState("1");
-  const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
+  const [subjectOptions, setSubjectOptions] = useState<string[]>([...DRIVING_SUBJECTS]);
   const [locationOptions, setLocationOptions] = useState<string[]>(VTNZ_LOCATIONS);
 
   const [useInstructorCar, setUseInstructorCar] = useState(true);
@@ -247,18 +255,34 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     async function loadSuggestions() {
       const { subjects, locations } = await fetchFormSuggestions(supabase, businessId);
       setSubjectOptions([
-        "道路熟悉 (Familiarization)",
-        "限制性 (Restricted)",
-        "全驾照 (Full)",
-        ...subjects,
+        ...DRIVING_SUBJECTS,
+        ...subjects.filter((s) => !(DRIVING_SUBJECTS as readonly string[]).includes(s)),
       ]);
       setLocationOptions(mergeLocationOptions(locations, VTNZ_LOCATIONS));
     }
     loadSuggestions();
   }, [businessId, supabase]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const applyMagicParse = (text: string, showToast = true) => {
+    const parsed = parseDrivingBookingText(text, Number(duration) || 1);
+    if (!parsed) return false;
+
+    if (parsed.studentIdentifier) setIdentifier(parsed.studentIdentifier);
+    setSubject(parsed.subject);
+    if (parsed.coach) setCoach(parsed.coach);
+    if (parsed.useInstructorCar != null) setUseInstructorCar(parsed.useInstructorCar);
+    if (parsed.needPickup) setNeedPickup(true);
+    if (parsed.plateNumber) setPlateNumber(parsed.plateNumber);
+    if (parsed.resolvedLocation) setLocation(parsed.resolvedLocation);
+    if (parsed.suggestedHourlyRate != null) {
+      setActualRate(String(parsed.suggestedHourlyRate));
+    }
+
+    if (showToast) toast.success("已解析并填充表单");
+    return true;
+  };
+
+  const submitBooking = async () => {
     if (!identifier || !date || !location || !subject) { toast.warning("请补全必填信息"); return; }
     if (usesSingleTimePicker(repeatMode) && !time) { toast.warning("请填写时间"); return; }
     if (isRecurringMode(repeatMode) && endMode === 'date' && !endDate) { toast.warning("请选择结束日期"); return; }
@@ -275,8 +299,8 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     formData.append("useInstructorCar", String(useInstructorCar));
     formData.append("needPickup", String(needPickup));
     formData.append("subject", subject);
+    if (coach) formData.append("coach", coach);
     
-    // 注入循环参数
     formData.append("repeatMode", repeatMode);
     formData.append("endMode", endMode);
     formData.append("repeatCount", repeatCount);
@@ -298,16 +322,53 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitBooking();
+  };
+
+  const handleMagicKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const text = magicInput.trim();
+    if (!text) return;
+    applyMagicParse(text, false);
+    await submitBooking();
+  };
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Magic Input */}
+        <div className="space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-4">
+          <Label className="text-xs text-indigo-700 font-bold uppercase tracking-wider pl-1 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> 极速文本排课 · 回车提交
+          </Label>
+          <Input
+            placeholder="3045 限制性练车 panmure 教练车 牛 85🔪"
+            value={magicInput}
+            onChange={(e) => {
+              const v = e.target.value;
+              setMagicInput(v);
+              if (v.trim().length >= 4) applyMagicParse(v, false);
+            }}
+            onKeyDown={handleMagicKeyDown}
+            className="h-12 rounded-xl border-indigo-200 bg-white font-medium text-base shadow-sm"
+            autoFocus
+          />
+          <p className="text-[11px] text-indigo-500/80 pl-1">
+            自动识别学员、科目、教练、车辆、金额；输入后按 Enter 一键排课
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label className="text-xs text-indigo-500 font-bold uppercase tracking-wider pl-1">学员编号或姓名 *</Label>
-          <Input placeholder="例如: 8011 或 Alex" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg" autoFocus />
+          <Input placeholder="例如: 8011 或 Alex" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg" />
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
-           <div className="space-y-2">
+           <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">课程阶段 *</Label>
               <CreatableCombobox
                 value={subject}
@@ -315,6 +376,18 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
                 options={subjectOptions}
                 placeholder="选择或输入课程阶段"
               />
+             </div>
+             <div className="space-y-2">
+              <Label className="text-xs text-slate-400 font-bold uppercase pl-1">教练</Label>
+              <Select value={coach || undefined} onValueChange={(v) => setCoach(v as DrivingCoach)}>
+                <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="选择教练" /></SelectTrigger>
+                <SelectContent>
+                  {DRIVING_COACHES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+             </div>
            </div>
            <div className="space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">考点 / 练车地点 *</Label>
