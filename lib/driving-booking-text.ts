@@ -242,40 +242,63 @@ export function parseDrivingBookingText(
   };
 }
 
-/** ICS SUMMARY：[牛教练] 限制性练车 - 3045 (教练车 $85) */
+/** 地点短标签：优先取 VTNZ 后地名 / 逗号前首段，便于手机日历阅读 */
+function shortLocationLabel(location?: string | null): string {
+  const raw = location?.trim();
+  if (!raw) return "未指定";
+  // "VTNZ North Shore, 120 Sunnybrae Rd..." → North Shore
+  const vtnz = raw.match(/^VTNZ\s+([^,(]+)/i);
+  if (vtnz?.[1]) return vtnz[1].trim();
+  // "56 Pleasant View Rd, Panmure, Auckland..." → 取含常见区名的段，否则首段
+  const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
+  const suburb = parts.find((p) =>
+    /panmure|albany|westgate|northshore|new lynn|glen innes|silverdale|manukau|pukekohe|takanini|wiri|warkworth|auckland cbd|cbd|北岸|中区|东区|市区/i.test(
+      p
+    )
+  );
+  if (suburb) return suburb;
+  return parts[0] || raw;
+}
+
+/**
+ * ICS SUMMARY（sine）：学员编号 科目 地点 教练 是否教练车 价格
+ * 例：3045 限制性练车 Panmure 童教练 教练车 $85
+ * 兜底：教练→牛教练；用车 null→自己车；价格→actual_rate 或 $75
+ */
 export function formatSineIcsSummary(input: {
   subject?: string | null;
   studentCode?: string | null;
   studentName?: string | null;
+  location?: string | null;
   metadata?: Record<string, unknown> | null;
   actualRate?: number | null;
   duration?: number | null;
 }): string {
-  const subject = normalizeDrivingSubject(input.subject ?? "");
-  const coach =
-    normalizeCoach(String(input.metadata?.coach ?? "")) ??
-    (input.metadata?.coach ? String(input.metadata.coach) : null);
-  const coachLabel = coach ?? "未指定教练";
   const identifier =
     input.studentCode?.trim() ||
     input.studentName?.trim() ||
     "未知学员";
+  const subject = normalizeDrivingSubject(input.subject ?? "");
+  const place = shortLocationLabel(input.location);
+
+  const coachRaw = input.metadata?.coach != null ? String(input.metadata.coach) : "";
+  const coachLabel =
+    normalizeCoach(coachRaw) ||
+    (coachRaw.trim() ? coachRaw.trim() : null) ||
+    "牛教练";
 
   const useCar = input.metadata?.useInstructorCar;
-  let carLabel = "未指定车辆";
-  if (useCar === true) carLabel = "教练车";
-  else if (useCar === false) carLabel = "自己车";
+  const carLabel = useCar === true ? "教练车" : "自己车"; // null/false → 自己车
 
-  const rate = Number(input.actualRate) || 0;
-  const amount =
-    rate > 0 && input.duration
-      ? round2(rate * Number(input.duration))
-      : rate > 0
-        ? rate
-        : null;
-  const pricePart = amount != null ? `$${amount}` : rate > 0 ? `$${rate}/hr` : "";
+  const rate = Number(input.actualRate);
+  const price =
+    Number.isFinite(rate) && rate > 0
+      ? `$${round2(rate)}`
+      : useCar === true
+        ? "$85"
+        : "$75";
 
-  return `[${coachLabel}] ${subject} - ${identifier} (${carLabel}${pricePart ? ` ${pricePart}` : ""})`.trim();
+  return [identifier, subject, place, coachLabel, carLabel, price].join(" ");
 }
 
 /** ICS DESCRIPTION 明细 */
@@ -293,13 +316,15 @@ export function formatSineIcsDescription(input: {
 }): string {
   const subject = normalizeDrivingSubject(input.subject ?? "");
   const coachRaw = input.metadata?.coach ? String(input.metadata.coach) : null;
-  const coach = normalizeCoach(coachRaw) ?? coachRaw ?? "未指定";
+  const coach =
+    normalizeCoach(coachRaw) ||
+    (coachRaw?.trim() ? coachRaw.trim() : null) ||
+    "牛教练";
   const identifier = input.studentCode || "—";
   const name = input.studentName || "—";
   const useCar = input.metadata?.useInstructorCar;
-  const carLabel =
-    useCar === true ? "教练车" : useCar === false ? "自己车" : "未指定";
-  const rate = Number(input.actualRate) || 0;
+  const carLabel = useCar === true ? "教练车" : "自己车";
+  const rate = Number(input.actualRate) || (useCar === true ? 85 : 75);
   const duration = Number(input.duration) || 0;
   const sessionTotal = rate > 0 && duration > 0 ? round2(rate * duration) : null;
   const statusLabel = input.status === "completed" ? "已完成" : "待进行";
@@ -311,7 +336,7 @@ export function formatSineIcsDescription(input: {
     `科目：${subject}`,
     `学员：${name} (${identifier})`,
     `用车：${carLabel}`,
-    rate > 0 ? `时薪：$${rate}/hr` : null,
+    `时薪：$${rate}/hr`,
     sessionTotal != null ? `本节课金额：$${sessionTotal}` : null,
     input.metadata?.needPickup ? "接送：是" : null,
     input.metadata?.pickupAddress

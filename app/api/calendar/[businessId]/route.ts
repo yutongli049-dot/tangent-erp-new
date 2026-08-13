@@ -69,6 +69,7 @@ export async function GET(
         subject: booking.subject,
         studentCode,
         studentName,
+        location: booking.location,
         metadata,
         actualRate: booking.actual_rate,
         duration: booking.duration,
