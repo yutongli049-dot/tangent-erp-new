@@ -7,6 +7,7 @@ import { startOfWeek, endOfWeek, format, eachDayOfInterval } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { aggregateByCurrency, DEFAULT_CURRENCY, normalizeCurrency } from "@/lib/currency";
 import { getNzMonthBounds, getTodayInNZ, nzStartOfDayUtc, nzEndOfDayUtc, TZ_NZ } from "@/lib/timezone";
+import { insertTransaction, updateTransactionRow } from "@/lib/transaction-write";
 
 /** 流水/时间戳 → NZ 日历日 YYYY-MM-DD */
 function toNzCalendarDay(value: string | null | undefined): string {
@@ -36,21 +37,21 @@ export async function createTransaction(prevState: any, formData: FormData) {
   const studentId = formData.get("studentId") as string;
   const hoursToAdd = Number(formData.get("hoursToAdd"));
 
-  const { error: txError } = await supabase.from("transactions").insert({
+  const { error: txError } = await insertTransaction(supabase, {
     type,
     amount: Number(amount),
     category,
     description,
     transaction_date: date,
     business_unit_id: businessId,
-    proof_img_url: proofUrl,
+    proof_img_url: proofUrl || null,
     created_by: user.id,
-    student_id: studentId || null, 
+    student_id: studentId || null,
     quantity: hoursToAdd > 0 ? hoursToAdd : null,
     currency,
   });
 
-  if (txError) return { error: txError.message };
+  if (txError) return { error: txError };
 
   if (studentId && hoursToAdd > 0 && type === "income") {
     const balanceRes = await incrementStudentBalance(supabase, studentId, hoursToAdd);
@@ -99,19 +100,16 @@ export async function updateTransaction(
 ) {
   const supabase = await createClient();
   
-  const { error } = await supabase
-    .from("transactions")
-    .update({
-      amount: data.amount,
-      category: data.category,
-      description: data.description,
-      transaction_date: data.date,
-      type: data.type,
-      ...(data.currency ? { currency: normalizeCurrency(data.currency) } : {}),
-    })
-    .eq("id", id);
+  const { error } = await updateTransactionRow(supabase, id, {
+    amount: data.amount,
+    category: data.category,
+    description: data.description,
+    transaction_date: data.date,
+    type: data.type,
+    ...(data.currency ? { currency: normalizeCurrency(data.currency) } : {}),
+  });
 
-  if (error) return { error: error.message };
+  if (error) return { error };
   revalidatePath("/finance");
   revalidatePath("/");
   return { success: true };

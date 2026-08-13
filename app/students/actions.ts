@@ -11,6 +11,7 @@ import { incrementStudentBalance } from "@/lib/student-balance";
 import { roundHours } from "@/lib/utils";
 
 import { DEFAULT_CURRENCY, normalizeCurrency, type Currency } from "@/lib/currency";
+import { insertTransaction } from "@/lib/transaction-write";
 
 
 
@@ -94,7 +95,7 @@ export async function createStudent(prevState: any, formData: FormData) {
 
     const amount = initialBalance * hourlyRate;
 
-    await supabase.from("transactions").insert({
+    await insertTransaction(supabase, {
 
       type: "income",
 
@@ -202,7 +203,7 @@ export async function updateStudent(id: string, data: {
 
 
 
-      await supabase.from("transactions").insert({
+      await insertTransaction(supabase, {
 
         type: "adjustment",
 
@@ -377,7 +378,7 @@ export async function topUpStudent(
 
     const desc = `学员充值: [${student.student_code || '无学号'}] ${student.name} (+${hoursToAdd}课时)`;
 
-    await supabase.from("transactions").insert({
+    await insertTransaction(supabase, {
 
       type: "income",
 
@@ -473,7 +474,7 @@ export async function refundStudent(studentId: string, hoursToSubtract: number) 
 
 
 
-  await supabase.from("transactions").insert({
+  await insertTransaction(supabase, {
 
     type: "expense",
 
