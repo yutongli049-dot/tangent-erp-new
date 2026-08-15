@@ -242,14 +242,13 @@ export function parseDrivingBookingText(
   };
 }
 
-/** 地点短标签：优先取 VTNZ 后地名 / 逗号前首段，便于手机日历阅读 */
+/** 地点短标签：VTNZ 考点保留前缀；街道路径取区名 */
 function shortLocationLabel(location?: string | null): string {
   const raw = location?.trim();
   if (!raw) return "未指定";
-  // "VTNZ North Shore, 120 Sunnybrae Rd..." → North Shore
-  const vtnz = raw.match(/^VTNZ\s+([^,(]+)/i);
+  // "VTNZ North Shore, 120 Sunnybrae Rd..." → VTNZ North Shore
+  const vtnz = raw.match(/^(VTNZ\s+[^,(]+)/i);
   if (vtnz?.[1]) return vtnz[1].trim();
-  // "56 Pleasant View Rd, Panmure, Auckland..." → 取含常见区名的段，否则首段
   const parts = raw.split(",").map((p) => p.trim()).filter(Boolean);
   const suburb = parts.find((p) =>
     /panmure|albany|westgate|northshore|new lynn|glen innes|silverdale|manukau|pukekohe|takanini|wiri|warkworth|auckland cbd|cbd|北岸|中区|东区|市区/i.test(
@@ -260,10 +259,28 @@ function shortLocationLabel(location?: string | null): string {
   return parts[0] || raw;
 }
 
+/** ICS 科目极简：练车 / 陪考 */
+export function compactIcsSubject(raw?: string | null): "练车" | "陪考" {
+  const s = (raw || "").trim();
+  if (/陪考|考试/.test(s)) return "陪考";
+  return "练车";
+}
+
+/** ICS 教练极简：牛 / 童；空则牛 */
+export function compactIcsCoach(raw?: string | null): "牛" | "童" {
+  const s = (raw || "").trim();
+  if (!s) return "牛";
+  if (/童|大头|老公/.test(s)) return "童";
+  if (/牛/.test(s)) return "牛";
+  const normalized = normalizeCoach(s);
+  if (normalized === "童教练") return "童";
+  return "牛";
+}
+
 /**
- * ICS SUMMARY（sine）：学员编号 科目 地点 教练 是否教练车 价格
- * 例：3045 限制性练车 Panmure 童教练 教练车 $85
- * 兜底：教练→牛教练；用车 null→自己车；价格→actual_rate 或 $75
+ * ICS SUMMARY（sine 极简）：编号 科目 教练 用车 价格 位置
+ * 例：3045 练车 牛 教练车 85 Panmure
+ * 兜底：教练→牛；用车 null→自己车；价格无 $
  */
 export function formatSineIcsSummary(input: {
   subject?: string | null;
@@ -278,27 +295,20 @@ export function formatSineIcsSummary(input: {
     input.studentCode?.trim() ||
     input.studentName?.trim() ||
     "未知学员";
-  const subject = normalizeDrivingSubject(input.subject ?? "");
+  const subject = compactIcsSubject(input.subject);
+  const coach = compactIcsCoach(
+    input.metadata?.coach != null ? String(input.metadata.coach) : ""
+  );
+  const useCar = input.metadata?.useInstructorCar;
+  const carLabel = useCar === true ? "教练车" : "自己车";
+  const duration = Number(input.duration) > 0 ? Number(input.duration) : 1;
+  const rate = Number(input.actualRate);
+  const hourly =
+    Number.isFinite(rate) && rate > 0 ? rate : useCar === true ? 85 : 75;
+  const price = String(round2(hourly * duration));
   const place = shortLocationLabel(input.location);
 
-  const coachRaw = input.metadata?.coach != null ? String(input.metadata.coach) : "";
-  const coachLabel =
-    normalizeCoach(coachRaw) ||
-    (coachRaw.trim() ? coachRaw.trim() : null) ||
-    "牛教练";
-
-  const useCar = input.metadata?.useInstructorCar;
-  const carLabel = useCar === true ? "教练车" : "自己车"; // null/false → 自己车
-
-  const rate = Number(input.actualRate);
-  const price =
-    Number.isFinite(rate) && rate > 0
-      ? `$${round2(rate)}`
-      : useCar === true
-        ? "$85"
-        : "$75";
-
-  return [identifier, subject, place, coachLabel, carLabel, price].join(" ");
+  return [identifier, subject, coach, carLabel, price, place].join(" ");
 }
 
 /** ICS DESCRIPTION 明细 */

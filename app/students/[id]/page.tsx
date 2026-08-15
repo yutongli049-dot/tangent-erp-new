@@ -123,7 +123,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
 
         {/* ✅ History Tabs */}
         <Tabs defaultValue="classes" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-slate-200/50 p-1 mb-4 h-12">
+          <TabsList className="mx-auto mb-4 grid h-12 w-full max-w-md grid-cols-2 rounded-2xl bg-slate-200/50 p-1">
             <TabsTrigger value="classes" className="rounded-xl text-xs font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
               📚 上课记录 ({bookings?.length || 0})
             </TabsTrigger>

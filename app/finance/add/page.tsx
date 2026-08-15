@@ -194,7 +194,7 @@ export default function AddTransactionPage() {
             
             {/* Type Switcher */}
             <Tabs value={type} onValueChange={handleTypeChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-slate-100 p-1.5 h-12">
+              <TabsList className="mx-auto grid h-12 w-full max-w-md grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
                 <TabsTrigger value="expense" className="rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-rose-600 data-[state=active]:shadow-sm">支出 Out</TabsTrigger>
                 <TabsTrigger value="income" className="rounded-xl text-sm font-bold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-sm">收入 In</TabsTrigger>
               </TabsList>

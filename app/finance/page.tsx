@@ -31,6 +31,7 @@ export default function FinancePage() {
   const { currentBusinessId } = useBusiness();
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("month"); 
+  const [txFilter, setTxFilter] = useState<"all" | "income" | "expense">("all");
   const [data, setData] = useState<any>({
     income: 0, expense: 0, net: 0, realized: 0, realizedRmb: 0,
     byCurrency: {
@@ -164,7 +165,7 @@ export default function FinancePage() {
              </p>
           </div>
           
-          <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm w-full md:w-auto overflow-x-auto no-scrollbar">
+          <div className="mx-auto grid w-full max-w-lg grid-cols-5 gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm md:mx-0 md:w-auto">
             {[
               { id: 'week', label: '本周' },
               { id: 'month', label: '本月' },
@@ -175,7 +176,7 @@ export default function FinancePage() {
               <button
                 key={r.id}
                 onClick={() => setRange(r.id)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-1 md:flex-none ${
+                className={`rounded-lg px-2 py-1.5 text-center text-[11px] font-bold whitespace-nowrap transition-all sm:text-xs ${
                   range === r.id 
                     ? 'bg-slate-900 text-white shadow-md' 
                     : 'text-slate-500 hover:bg-slate-50'
@@ -274,16 +275,38 @@ export default function FinancePage() {
                </Button>
              </Link>
            </div>
+
+           <div className="mx-auto mb-4 grid w-full max-w-md grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+             {([
+               { id: "all" as const, label: "全部" },
+               { id: "income" as const, label: "收入" },
+               { id: "expense" as const, label: "支出" },
+             ]).map((tab) => (
+               <button
+                 key={tab.id}
+                 onClick={() => setTxFilter(tab.id)}
+                 className={`rounded-lg py-2 text-center text-xs font-bold transition-all ${
+                   txFilter === tab.id
+                     ? "bg-white text-indigo-600 shadow-sm"
+                     : "text-slate-500 hover:text-slate-700"
+                 }`}
+               >
+                 {tab.label}
+               </button>
+             ))}
+           </div>
            
            <div className="space-y-3">
              {loading ? (
                <div className="text-center py-10"><Loader2 className="animate-spin text-slate-300 mx-auto"/></div>
-             ) : data.transactions.length === 0 ? (
+             ) : data.transactions.filter((t: { type?: string }) => txFilter === "all" || t.type === txFilter).length === 0 ? (
                <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
                  本时段无流水记录
                </div>
              ) : (
-               data.transactions.map((t: any) => (
+               data.transactions
+                 .filter((t: { type?: string }) => txFilter === "all" || t.type === txFilter)
+                 .map((t: any) => (
                  <div key={t.id} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm active:scale-[0.99] transition-transform">
                     <div className="flex items-center gap-4">
                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${

@@ -113,6 +113,31 @@ export function formatDualTimeParts(utcIso: string): { nzt: string; bjt: string 
   };
 }
 
+/** NZT 时段：10:30 - 11:30 (1h)；endUtc 缺失时用 duration 推算 */
+export function formatNzTimeRange(
+  startUtc: string,
+  endUtc?: string | null,
+  durationHours?: number | null
+): string {
+  const start = new Date(startUtc);
+  if (Number.isNaN(start.getTime())) return "";
+  const startNzt = formatInTimeZone(start, TZ_NZ, "HH:mm");
+
+  let end = endUtc ? new Date(endUtc) : null;
+  if (!end || Number.isNaN(end.getTime())) {
+    const hours = Number(durationHours) || 1;
+    end = new Date(start.getTime() + hours * 3_600_000);
+  }
+  const endNzt = formatInTimeZone(end, TZ_NZ, "HH:mm");
+
+  const dur =
+    durationHours != null && Number.isFinite(Number(durationHours))
+      ? Number(durationHours)
+      : (end.getTime() - start.getTime()) / 3_600_000;
+  const durLabel = Number.isInteger(dur) ? `${dur}h` : `${Math.round(dur * 10) / 10}h`;
+  return `${startNzt} - ${endNzt} (${durLabel})`;
+}
+
 /** 根据新西兰本地输入预览双时区（新建排课） */
 export function formatDualTimeFromNzLocal(dateStr: string, timeStr: string): string {
   if (!dateStr || !timeStr) return "";

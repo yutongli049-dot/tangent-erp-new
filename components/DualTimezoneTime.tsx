@@ -4,10 +4,13 @@ import { cn } from "@/lib/utils";
 import {
   formatDualTimeFromNzLocal,
   formatDualTimeParts,
+  formatNzTimeRange,
 } from "@/lib/timezone";
 
 type UtcProps = {
   utcIso: string;
+  endUtc?: string | null;
+  durationHours?: number | null;
   className?: string;
   compact?: boolean;
 };
@@ -18,23 +21,27 @@ type LocalPreviewProps = {
   className?: string;
 };
 
-/** 从数据库 UTC 时间渲染中新双时区 */
-export function DualTimezoneTime({ utcIso, className, compact }: UtcProps) {
-  const { nzt, bjt } = formatDualTimeParts(utcIso);
+/** 从数据库 UTC 时间渲染中新双时区；有 endUtc 时显示 10:30 - 11:30 (1h) */
+export function DualTimezoneTime({ utcIso, endUtc, durationHours, className, compact }: UtcProps) {
+  const { bjt } = formatDualTimeParts(utcIso);
+  const rangeLabel =
+    endUtc || durationHours != null
+      ? formatNzTimeRange(utcIso, endUtc, durationHours)
+      : null;
+  const { nzt } = formatDualTimeParts(utcIso);
+  const primary = rangeLabel || nzt;
+
   if (compact) {
     return (
-      <span className={cn("font-mono text-sm", className)}>
-        <span className="font-bold text-slate-700">{nzt}</span>
-        <span className="text-[10px] text-slate-400 ml-0.5">(NZT)</span>
-        <span className="text-slate-300 mx-1">/</span>
-        <span className="text-slate-500">{bjt}</span>
-        <span className="text-[10px] text-slate-400 ml-0.5">(BJT)</span>
+      <span className={cn("inline-flex flex-col items-end font-mono text-sm leading-tight", className)}>
+        <span className="font-bold text-slate-700 whitespace-nowrap">{primary}</span>
+        <span className="text-[10px] text-slate-400">NZT · {bjt} BJT</span>
       </span>
     );
   }
   return (
     <div className={cn("text-sm leading-snug", className)}>
-      <span className="font-bold font-mono text-slate-800">{nzt} (NZT)</span>
+      <span className="font-bold font-mono text-slate-800">{primary} (NZT)</span>
       <span className="text-slate-400 text-xs"> / {bjt} (BJT)</span>
     </div>
   );

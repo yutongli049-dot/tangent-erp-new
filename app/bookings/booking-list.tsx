@@ -34,6 +34,7 @@ type Booking = {
   duration: number;
   status: string;
   location: string | null;
+  subject?: string | null;
   student: { id: string; name: string; teacher: string | null; subject: string | null; hourly_rate?: number; student_code?: string; } | null;
   business_unit_id: string;
   actual_rate?: number | null;
@@ -172,10 +173,10 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-100 p-1 rounded-xl flex items-center relative">
+      <div className="mx-auto w-full max-w-md bg-slate-100 p-1 rounded-xl grid grid-cols-2">
         <button 
           onClick={() => setActiveTab('upcoming')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'upcoming' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -183,7 +184,7 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
         </button>
         <button 
           onClick={() => setActiveTab('history')}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+          className={`py-2 text-xs font-bold rounded-lg transition-all ${
             activeTab === 'history' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -222,8 +223,13 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
               <div className="space-y-3">
                 {items.map(b => {
                    const isOverdue = activeTab === 'upcoming' && isPast(new Date(b.start_time)) && !isTodayInNZ(b.start_time);
-                   const studentLabel = b.student?.student_code || b.student?.name || "未知学员";
-                   const subjectLabel = b.student?.subject || "无科目";
+                   const studentCode = b.student?.student_code?.trim() || "";
+                   const studentName = b.student?.name?.trim() || "";
+                   const studentTitle =
+                     studentCode && studentName && studentCode !== studentName
+                       ? `${studentCode} · ${studentName}`
+                       : studentCode || studentName || "未知学员";
+                   const subjectLabel = b.subject || b.student?.subject || "无科目";
                    const coachLabel = b.metadata?.coach || b.student?.teacher || null;
                    const carLabel =
                      b.metadata?.useInstructorCar === true
@@ -240,25 +246,13 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                         <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-transform active:scale-[0.99] sm:p-4">
                            <div className="mb-3 flex items-start justify-between gap-3">
                               <div className="flex min-w-0 items-start gap-3">
-                                 <Avatar name={b.student?.name || "?"} />
+                                 <Avatar name={studentName || studentCode || "?"} />
                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="min-w-0">
-                                        <h4 className="truncate text-base font-semibold text-slate-900">{studentLabel}</h4>
-                                        <p className="mt-0.5 truncate text-sm font-medium text-slate-700">{subjectLabel}</p>
-                                      </div>
-                                      {rateLabel ? (
-                                        <div className="shrink-0 text-right text-sm font-bold text-emerald-600">
-                                          ${rateLabel}
-                                        </div>
-                                      ) : null}
-                                    </div>
+                                    <h4 className="truncate text-base font-semibold text-slate-900">{studentTitle}</h4>
+                                    <p className="mt-0.5 truncate text-sm font-medium text-slate-700">{subjectLabel}</p>
                                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                                       <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px] font-medium">
                                         {b.status === "completed" ? "已完成" : b.status === "cancelled" ? "已取消" : "待办"}
-                                      </Badge>
-                                      <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px] font-medium border-slate-200">
-                                        {b.duration}h
                                       </Badge>
                                       {isOverdue && (
                                         <Badge className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50">
@@ -269,7 +263,18 @@ export function BookingList({ bookings }: { bookings: Booking[] }) {
                                  </div>
                               </div>
                               <div className="shrink-0 text-right">
-                                 <DualTimezoneTime utcIso={b.start_time} compact className={isOverdue ? "text-rose-500" : undefined} />
+                                 <DualTimezoneTime
+                                   utcIso={b.start_time}
+                                   endUtc={b.end_time}
+                                   durationHours={b.duration}
+                                   compact
+                                   className={isOverdue ? "text-rose-500" : undefined}
+                                 />
+                                 {rateLabel ? (
+                                   <div className="mt-1 text-sm font-bold text-emerald-600">
+                                     ${rateLabel}
+                                   </div>
+                                 ) : null}
                               </div>
                            </div>
 
