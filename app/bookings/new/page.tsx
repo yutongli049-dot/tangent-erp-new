@@ -24,7 +24,6 @@ import {
   DEFAULT_DRIVING_COACH,
   DEFAULT_DRIVING_SUBJECT,
   DRIVING_COACHES,
-  DRIVING_SUBJECTS,
   defaultCoachForEmail,
   parseDrivingBookingText,
   type DrivingCoach,
@@ -54,17 +53,46 @@ const VTNZ_LOCATIONS = [
   "VTNZ Wiri (103 Roscommon Rd)", "其他 (Other)"
 ];
 
+const QUICK_SUBJECTS = [
+  "全驾照练车",
+  "限制性练车",
+  "全驾照陪考",
+  "限制性陪考",
+  "道路熟悉练车",
+] as const;
+
+const DURATION_PRESETS = [
+  { value: "1", label: "1h (60 min)" },
+  { value: "1.5", label: "1.5h (90 min)" },
+  { value: "2", label: "2h (120 min)" },
+] as const;
+
+const FIELD =
+  "h-12 w-full min-w-0 rounded-xl border-slate-200 bg-white";
+
+function isPresetSubject(value: string) {
+  return (QUICK_SUBJECTS as readonly string[]).includes(value);
+}
+
+function durationSelectValue(value: string) {
+  const n = Number(value);
+  if (n === 1) return "1";
+  if (n === 1.5) return "1.5";
+  if (n === 2) return "2";
+  return "custom";
+}
+
 export default function NewBookingPage() {
   const router = useRouter();
   const { currentBusinessId } = useBusiness();
   const isDrivingSchool = currentBusinessId.includes('sine');
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-24 md:pb-10">
+    <div className="h-dvh w-full max-w-full overflow-x-hidden overscroll-none bg-slate-50 font-sans text-slate-900 md:min-h-screen md:h-auto">
       <div className="hidden md:block"><Navbar /></div>
-      <main className="mx-auto max-w-xl px-4 md:px-6 py-5 md:py-8">
+      <main className="mx-auto w-full min-w-0 max-w-xl overflow-x-hidden overscroll-none px-3 pt-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:px-6 md:py-8 md:pb-10">
         
-        <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:items-center">
+        <div className="mb-3 flex min-w-0 items-start gap-3 sm:mb-6 sm:items-center">
           <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl border-slate-200 bg-white shadow-sm sm:h-10 sm:w-10" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5 text-slate-600" />
           </Button>
@@ -120,12 +148,12 @@ function RecurrenceSelector({
   const showWeeklyBuilder = usesWeeklyScheduleBuilder(repeatMode);
 
   return (
-    <div className="col-span-2 space-y-3 bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/50 transition-all">
-      <div className="grid grid-cols-2 gap-4">
-        <div className={hideTime ? "col-span-2 space-y-2" : "space-y-2"}>
+    <div className="col-span-2 w-full min-w-0 space-y-3 rounded-2xl border border-indigo-100/50 bg-indigo-50/30 p-3 transition-all sm:p-5">
+      <div className="grid w-full min-w-0 grid-cols-2 gap-3">
+        <div className={hideTime ? "col-span-2 min-w-0 space-y-2" : "min-w-0 space-y-2"}>
           <Label className="text-xs text-indigo-700 font-bold uppercase pl-1 flex items-center gap-1"><Repeat className="h-3 w-3"/> 排课模式</Label>
           <Select value={repeatMode} onValueChange={setRepeatMode}>
-            <SelectTrigger className={`h-12 rounded-xl bg-white ${recurring ? 'border-indigo-400 font-bold text-indigo-700 shadow-sm' : 'border-slate-200'}`}>
+            <SelectTrigger className={`h-12 w-full min-w-0 rounded-xl bg-white ${recurring ? 'border-indigo-400 font-bold text-indigo-700 shadow-sm' : 'border-slate-200'}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +167,7 @@ function RecurrenceSelector({
         {showSingleTime && !hideTime && (
           <div className="space-y-2 animate-in fade-in zoom-in-95">
             <Label className="text-xs text-slate-500 font-bold pl-1">上课时间 (NZT)</Label>
-            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="h-12 rounded-xl bg-white" />
+            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className={FIELD} />
           </div>
         )}
       </div>
@@ -160,13 +188,13 @@ function RecurrenceSelector({
              <Label className="text-xs font-bold text-indigo-700 mb-2 block">每周上课时间 (Weekly Schedule)</Label>
              <div className="space-y-2">
                {weeklySchedule.map((session, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                  <div key={index} className="flex min-w-0 items-center gap-2">
                      <Select value={session.dayOfWeek} onValueChange={(val) => {
                          const newSchedule = [...weeklySchedule];
                          newSchedule[index].dayOfWeek = val;
                          setWeeklySchedule(newSchedule);
                      }}>
-                        <SelectTrigger className="h-10 bg-white border-slate-200 shadow-sm"><SelectValue/></SelectTrigger>
+                        <SelectTrigger className="h-10 w-full min-w-0 flex-1 bg-white border-slate-200 shadow-sm"><SelectValue/></SelectTrigger>
                         <SelectContent>
                            <SelectItem value="1">周一 (Mon)</SelectItem><SelectItem value="2">周二 (Tue)</SelectItem>
                            <SelectItem value="3">周三 (Wed)</SelectItem><SelectItem value="4">周四 (Thu)</SelectItem>
@@ -178,7 +206,7 @@ function RecurrenceSelector({
                          const newSchedule = [...weeklySchedule];
                          newSchedule[index].time = e.target.value;
                          setWeeklySchedule(newSchedule);
-                     }} className="h-10 bg-white border-slate-200 shadow-sm" />
+                     }} className="h-10 w-full min-w-0 flex-1 bg-white border-slate-200 shadow-sm" />
                      {weeklySchedule.length > 1 && (
                          <Button variant="ghost" size="icon" type="button" onClick={() => setWeeklySchedule(weeklySchedule.filter((_, i) => i !== index))} className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 h-10 w-10 shrink-0">
                            <Trash2 className="h-4 w-4"/>
@@ -267,7 +295,7 @@ function DrivingStudentPicker({
   }, [businessId, supabase, value, open]);
 
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0">
       <Input
         placeholder="例如: 8011 或 Alex"
         value={value}
@@ -278,7 +306,7 @@ function DrivingStudentPicker({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => window.setTimeout(() => setOpen(false), 160)}
-        className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg"
+        className="h-12 w-full min-w-0 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg"
       />
       {open && (
         <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
@@ -339,7 +367,6 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [endDate, setEndDate] = useState("");
   const [weeklySchedule, setWeeklySchedule] = useState([{ dayOfWeek: "1", time: "10:00" }]);
   const [customIntervalWeeks, setCustomIntervalWeeks] = useState("1");
-  const [subjectOptions, setSubjectOptions] = useState<string[]>([...DRIVING_SUBJECTS]);
   const [locationOptions, setLocationOptions] = useState<string[]>(VTNZ_LOCATIONS);
 
   const [useInstructorCar, setUseInstructorCar] = useState(true);
@@ -350,11 +377,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
   useEffect(() => {
     async function loadSuggestions() {
-      const { subjects, locations } = await fetchFormSuggestions(supabase, businessId);
-      setSubjectOptions([
-        ...DRIVING_SUBJECTS,
-        ...subjects.filter((s) => !(DRIVING_SUBJECTS as readonly string[]).includes(s)),
-      ]);
+      const { locations } = await fetchFormSuggestions(supabase, businessId);
       setLocationOptions(mergeLocationOptions(locations, VTNZ_LOCATIONS));
     }
     loadSuggestions();
@@ -425,6 +448,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
   const submitBooking = async () => {
     if (!identifier || !date || !location || !subject) { toast.warning("请补全必填信息"); return; }
+    if (!Number(duration)) { toast.warning("请填写时长"); return; }
     if (usesSingleTimePicker(repeatMode) && !time) { toast.warning("请填写时间"); return; }
     if (isRecurringMode(repeatMode) && endMode === 'date' && !endDate) { toast.warning("请选择结束日期"); return; }
 
@@ -507,7 +531,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
       type="button"
       onClick={onClick}
         className={cn(
-          "h-9 w-full rounded-full px-2 text-[11px] font-bold transition-all active:scale-95 sm:text-xs",
+          "h-8 w-full min-w-0 rounded-full px-1 text-[10px] font-bold leading-tight transition-all active:scale-95 sm:h-9 sm:px-2 sm:text-xs",
         active
           ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
           : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600"
@@ -518,14 +542,14 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   );
 
   return (
-    <div className="mx-auto max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:max-w-lg sm:p-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="w-full min-w-0 overflow-x-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-6">
+      <form onSubmit={handleSubmit} className="w-full min-w-0 space-y-3">
         {/* Step 1: 时间前置（苹果日历流） */}
-        <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3 sm:p-4">
+        <div className="w-full min-w-0 space-y-2 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3">
           <Label className="flex items-center gap-1.5 pl-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
             <CalendarDays className="h-3.5 w-3.5" /> Step 1 · 日期与开始时间
           </Label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          <div className="grid w-full min-w-0 grid-cols-5 gap-1.5">
             <DatePill label="今天" active={date === todayNz} onClick={() => setDate(todayNz)} />
             <DatePill label="明天" active={date === tomorrowNz} onClick={() => setDate(tomorrowNz)} />
             <DatePill label="后天" active={date === dayAfterNz} onClick={() => setDate(dayAfterNz)} />
@@ -536,50 +560,70 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
               onClick={openCustomCalendar}
             />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5 sm:col-span-1">
+          <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="min-w-0 space-y-1.5 col-span-2 sm:col-span-1">
               <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">日期 (NZT)</Label>
               <Input
                 ref={dateInputRef}
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-12 rounded-xl bg-white"
+                className={FIELD}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">开始时间</Label>
               <Input
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="h-12 rounded-xl bg-white"
+                className={FIELD}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">时长</Label>
-              <div className="relative">
+              <Select
+                value={durationSelectValue(duration)}
+                onValueChange={(v) => {
+                  if (v === "custom") {
+                    if (durationSelectValue(duration) !== "custom") setDuration("");
+                    return;
+                  }
+                  setDuration(v);
+                }}
+              >
+                <SelectTrigger className={FIELD}>
+                  <SelectValue placeholder="选择时长" />
+                </SelectTrigger>
+                <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+                  {DURATION_PRESETS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                  <SelectItem value="custom">自定义</SelectItem>
+                </SelectContent>
+              </Select>
+              {durationSelectValue(duration) === "custom" && (
                 <Input
                   type="number"
                   step="0.5"
                   min="0.5"
+                  placeholder="小时，如 0.5"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="h-12 rounded-xl bg-white pr-8"
+                  className={FIELD}
                 />
-                <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span>
-              </div>
+              )}
             </div>
           </div>
           {date && time && <DualTimezonePreview date={date} time={time} />}
         </div>
 
         {/* Magic Input */}
-        <div className="space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-3 sm:p-4">
+        <div className="w-full min-w-0 space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-3">
           <Label className="text-xs text-indigo-700 font-bold uppercase tracking-wider pl-1 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" /> 极速文本排课 · 回车提交
           </Label>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row">
             <Input
               placeholder="输入如：3045 全驾照练车 panmure 教练车 牛 85🔪"
               value={magicInput}
@@ -589,23 +633,20 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
                 if (v.trim().length >= 4) applyMagicParse(v, false);
               }}
               onKeyDown={handleMagicKeyDown}
-              className="h-12 rounded-xl border-indigo-200 bg-white text-sm font-medium shadow-sm sm:text-base"
+              className="h-12 w-full min-w-0 rounded-xl border-indigo-200 bg-white text-sm font-medium shadow-sm"
             />
             <Button
               type="button"
               variant="outline"
               onClick={() => applyMagicParse(magicInput)}
-              className="h-11 w-full rounded-xl border-indigo-200 bg-white text-sm font-semibold text-indigo-700 hover:bg-indigo-50 sm:w-auto"
+              className="h-11 w-full min-w-0 rounded-xl border-indigo-200 bg-white text-sm font-semibold text-indigo-700 hover:bg-indigo-50 sm:w-auto sm:shrink-0"
             >
               解析填充
             </Button>
           </div>
-          <p className="text-[11px] text-indigo-500/80 pl-1">
-            自动识别学员、科目、教练、车辆、金额；输入后按 Enter 一键排课
-          </p>
         </div>
 
-        <div className="space-y-2">
+        <div className="w-full min-w-0 space-y-2">
           <Label className="text-xs text-indigo-500 font-bold uppercase tracking-wider pl-1">学员编号或姓名 *</Label>
           <DrivingStudentPicker
             businessId={businessId}
@@ -615,22 +656,44 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           />
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-100">
-           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-             <div className="space-y-2">
+        <div className="w-full min-w-0 space-y-3 border-t border-slate-100 pt-3">
+           <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+             <div className="min-w-0 space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">课程阶段 *</Label>
-              <CreatableCombobox
-                value={subject}
-                onChange={setSubject}
-                options={subjectOptions}
-                placeholder="选择或输入课程阶段"
-              />
+              <Select
+                value={isPresetSubject(subject) ? subject : "custom"}
+                onValueChange={(v) => {
+                  if (v === "custom") {
+                    if (isPresetSubject(subject)) setSubject("");
+                    return;
+                  }
+                  setSubject(v);
+                }}
+              >
+                <SelectTrigger className={FIELD}>
+                  <SelectValue placeholder="选择课程阶段" />
+                </SelectTrigger>
+                <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+                  {QUICK_SUBJECTS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                  <SelectItem value="custom">自定义</SelectItem>
+                </SelectContent>
+              </Select>
+              {!isPresetSubject(subject) && (
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="输入自定义课程阶段"
+                  className={FIELD}
+                />
+              )}
              </div>
-             <div className="space-y-2">
+             <div className="min-w-0 space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">教练</Label>
               <Select value={coach || undefined} onValueChange={(v) => setCoach(v as DrivingCoach)}>
-                <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="选择教练" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className={FIELD}><SelectValue placeholder="选择教练" /></SelectTrigger>
+                <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
                   {DRIVING_COACHES.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
@@ -638,46 +701,39 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
               </Select>
              </div>
            </div>
-           <div className="space-y-2">
+           <div className="min-w-0 space-y-2">
               <Label className="text-xs text-slate-400 font-bold uppercase pl-1">考点 / 练车地点 *</Label>
               <CreatableCombobox
                 value={location}
                 onChange={setLocation}
                 options={locationOptions}
                 placeholder="选择或输入地点"
+                className="w-full min-w-0"
               />
            </div>
            
            <RecurrenceSelector hideTime repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} time={time} setTime={setTime} weeklySchedule={weeklySchedule} setWeeklySchedule={setWeeklySchedule} customIntervalWeeks={customIntervalWeeks} setCustomIntervalWeeks={setCustomIntervalWeeks} />
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-           <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Car className="h-4 w-4 text-slate-500" /><Label className="font-bold">使用教练车</Label></div><Switch checked={useInstructorCar} onCheckedChange={handleInstructorCarChange} /></div>
-           {!useInstructorCar && <Input placeholder="输入学员车牌号 (选填)" value={plateNumber} onChange={(e)=>setPlateNumber(e.target.value)} className="h-10 rounded-xl" />}
-           <div className="flex items-center justify-between pt-2"><div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-slate-500" /><Label className="font-bold">需要上门接送</Label></div><Switch checked={needPickup} onCheckedChange={setNeedPickup} /></div>
-           {needPickup && <Input placeholder="输入详细接送地址" value={pickupAddress} onChange={(e)=>setPickupAddress(e.target.value)} className="h-10 rounded-xl" />}
-           <div className="flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="w-full min-w-0 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-3">
+           <div className="flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><Car className="h-4 w-4 shrink-0 text-slate-500" /><Label className="font-bold">使用教练车</Label></div><Switch checked={useInstructorCar} onCheckedChange={handleInstructorCarChange} /></div>
+           {!useInstructorCar && <Input placeholder="输入学员车牌号 (选填)" value={plateNumber} onChange={(e)=>setPlateNumber(e.target.value)} className="h-10 w-full min-w-0 rounded-xl" />}
+           <div className="flex items-center justify-between gap-3 pt-1"><div className="flex min-w-0 items-center gap-2"><MapPin className="h-4 w-4 shrink-0 text-slate-500" /><Label className="font-bold">需要上门接送</Label></div><Switch checked={needPickup} onCheckedChange={setNeedPickup} /></div>
+           {needPickup && <Input placeholder="输入详细接送地址" value={pickupAddress} onChange={(e)=>setPickupAddress(e.target.value)} className="h-10 w-full min-w-0 rounded-xl" />}
+           <div className="flex w-full min-w-0 flex-col gap-2 border-t border-slate-200 pt-3">
               <Label className="flex items-center gap-1 font-bold text-slate-900"><DollarSign className="h-4 w-4 text-emerald-500" /> 本次课单价 (/hr)</Label>
-              <Input type="number" value={actualRate} onChange={(e) => setActualRate(e.target.value)} className="h-10 w-full rounded-xl border-emerald-200 bg-white text-right font-black text-emerald-600 sm:w-24" />
+              <Input type="number" value={actualRate} onChange={(e) => setActualRate(e.target.value)} className="h-10 w-full min-w-0 rounded-xl border-emerald-200 bg-white text-right font-black text-emerald-600" />
            </div>
         </div>
 
-        <div className="space-y-2 pt-2">
+        <div className="w-full min-w-0 space-y-2">
           <Label className="text-xs text-slate-400 font-bold uppercase pl-1">备注信息 (Notes)</Label>
-          <Textarea placeholder="选填..." value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl bg-white min-h-[80px]" />
+          <Textarea placeholder="选填..." value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full min-w-0 rounded-xl bg-white min-h-[64px]" />
         </div>
 
-        <div className="flex flex-col gap-2">
-        <Button type="submit" disabled={isLoading} className="h-11 w-full rounded-2xl bg-indigo-600 text-base font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] hover:bg-indigo-700 sm:h-12">
+        <div className="flex w-full min-w-0 flex-col gap-2">
+        <Button type="submit" disabled={isLoading} className="h-11 w-full min-w-0 rounded-2xl bg-indigo-600 text-base font-bold shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] hover:bg-indigo-700">
           {isLoading ? <><Loader2 className="mr-2 animate-spin" /> 提交中...</> : (isRecurringMode(repeatMode) ? "批量排课" : "一键排课")}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => applyMagicParse(magicInput)}
-          className="h-11 w-full rounded-2xl border-slate-200 text-sm font-semibold sm:hidden"
-        >
-          仅解析文本
         </Button>
         </div>
       </form>

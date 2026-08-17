@@ -60,7 +60,7 @@ export function CreatableCombobox({
   };
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative w-full min-w-0", className)}>
       {name && <input type="hidden" name={name} value={value} readOnly />}
       <Input
         id={id}
@@ -68,7 +68,7 @@ export function CreatableCombobox({
         value={inputValue}
         placeholder={placeholder}
         autoComplete="off"
-        className={cn("h-12 rounded-xl bg-white font-medium", inputClassName)}
+        className={cn("h-12 w-full min-w-0 rounded-xl bg-white font-medium", inputClassName)}
         onChange={(e) => {
           setInputValue(e.target.value);
           onChange(e.target.value);

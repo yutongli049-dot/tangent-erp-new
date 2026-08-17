@@ -1,52 +1,48 @@
 "use client";
 
-// ✅ 修改点 1: 从 'react' 引入 useActionState
-import { useActionState } from "react";
-// ✅ 修改点 2: useFormStatus 依然保留在 'react-dom' 中
-import { useFormStatus } from "react-dom";
-import { login } from "./actions";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient, getRememberMe, setRememberMe } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck } from "lucide-react";
 
-// 提交按钮组件（带 Loading 状态）
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      disabled={pending}
-      className="h-12 w-full rounded-xl bg-indigo-600 font-bold text-white shadow-sm hover:bg-indigo-700 active:scale-[0.98]"
-    >
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Verifying...
-        </>
-      ) : (
-        "Sign In"
-      )}
-    </Button>
-  );
-}
-
-// 初始状态
-const initialState = {
-  error: "",
-};
-
 export default function LoginPage() {
-  // ✅ 修改点 3: 使用 useActionState 替代 useFormState
-  // 注意：useActionState 的返回值结构是 [state, action, isPending]，我们只需要前两个
-  const [state, formAction] = useActionState(login, initialState);
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+  const [remember, setRemember] = useState(() => getRememberMe());
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setPending(true);
+
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") || "").trim();
+    const password = String(form.get("password") || "");
+
+    setRememberMe(remember);
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setPending(false);
+      setError("账号或密码错误，请重试。");
+      return;
+    }
+
+    router.replace("/");
+    router.refresh();
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-sm space-y-8">
-        
-        {/* Logo / Header */}
+    <main className="flex h-dvh w-full max-w-full flex-col items-center justify-center overflow-x-hidden overscroll-none bg-slate-50 p-6">
+      <div className="w-full min-w-0 max-w-sm space-y-8">
         <div className="flex flex-col items-center text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200">
             <ShieldCheck className="h-6 w-6" />
@@ -54,18 +50,14 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Tangent ERP
           </h1>
-            <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500">
             Internal Management System
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            登录后保持 60 天，打开 PWA 无需重新登录
           </p>
         </div>
 
-        {/* Login Card */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white p-8 shadow-sm">
-          <form action={formAction} className="space-y-5">
-            <div className="space-y-2">
+        <div className="w-full min-w-0 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm sm:p-8">
+          <form onSubmit={handleSubmit} className="w-full min-w-0 space-y-5">
+            <div className="w-full min-w-0 space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -73,31 +65,55 @@ export default function LoginPage() {
                 type="email"
                 placeholder="admin@tangent.center"
                 required
-                className="h-11 rounded-xl border-slate-200/70 bg-slate-50/50"
+                autoComplete="email"
+                className="h-11 w-full min-w-0 rounded-xl border-slate-200/70 bg-slate-50/50"
               />
             </div>
-            <div className="space-y-2">
+            <div className="w-full min-w-0 space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className="h-11 rounded-xl border-slate-200/70 bg-slate-50/50"
+                autoComplete="current-password"
+                className="h-11 w-full min-w-0 rounded-xl border-slate-200/70 bg-slate-50/50"
               />
             </div>
 
-            {/* Error Message */}
-            {state?.error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
-                {state.error}
+            <label className="flex min-w-0 items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+              />
+              60天免登录（推荐 PWA）
+            </label>
+
+            {error && (
+              <div className="rounded-lg border border-red-100 bg-red-50 p-3 text-sm text-red-600">
+                {error}
               </div>
             )}
 
-            <SubmitButton />
+            <Button
+              type="submit"
+              disabled={pending}
+              className="h-12 w-full min-w-0 rounded-xl bg-indigo-600 font-bold text-white shadow-sm hover:bg-indigo-700 active:scale-[0.98]"
+            >
+              {pending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
           </form>
         </div>
-        
+
         <p className="text-center text-xs text-slate-400">
           Authorized Personnel Only
         </p>

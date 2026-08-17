@@ -120,7 +120,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground h-full max-w-full overflow-x-hidden overscroll-none;
   }
+}
+
+@utility pb-safe {
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
 }

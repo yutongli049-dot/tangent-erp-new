@@ -62,7 +62,7 @@ export function MobileDock() {
   const isFinanceAdd = pathname.startsWith("/finance/add");
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200/60 bg-white/95 px-6 pb-safe pt-1 backdrop-blur-md">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full max-w-full overflow-x-hidden border-t border-slate-200/60 bg-white/95 px-4 pb-safe pt-1 backdrop-blur-md">
       <div className="flex items-center justify-between">
         <TabItem href="/" icon={HomeIcon} label="首页" isActive={isHome} />
         <TabItem href="/students" icon={Users} label="学生" isActive={isStudents} />
