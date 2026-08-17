@@ -16,7 +16,7 @@ export type DrivingSubject = (typeof DRIVING_SUBJECTS)[number];
 export const DRIVING_COACHES = ["牛教练", "童教练"] as const;
 export type DrivingCoach = (typeof DRIVING_COACHES)[number];
 
-export const DEFAULT_DRIVING_SUBJECT: DrivingSubject = "限制性练车";
+export const DEFAULT_DRIVING_SUBJECT: DrivingSubject = "全驾照练车";
 export const DEFAULT_DRIVING_COACH: DrivingCoach = "牛教练";
 
 /** 登录邮箱 → 默认教练；未匹配则兜底牛教练 */

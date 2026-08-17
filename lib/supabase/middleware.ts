@@ -1,6 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { authClientOptions, withAuthCookieOptions } from "@/lib/supabase/auth-options";
+
+const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 60;
+
+function withEdgeAuthCookieOptions(options: Record<string, unknown> = {}) {
+  return {
+    path: "/",
+    sameSite: "lax" as const,
+    maxAge:
+      typeof options.maxAge === "number" && options.maxAge > 0
+        ? options.maxAge
+        : AUTH_COOKIE_MAX_AGE,
+    ...options,
+  };
+}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -13,13 +26,16 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: authClientOptions,
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: Record<string, unknown>) {
-          const cookie = { name, value, ...withAuthCookieOptions(options) };
+          const cookie = {
+            name,
+            value,
+            ...withEdgeAuthCookieOptions(options),
+          };
           request.cookies.set(cookie);
           response = NextResponse.next({
             request: {
@@ -29,7 +45,12 @@ export async function updateSession(request: NextRequest) {
           response.cookies.set(cookie);
         },
         remove(name: string, options: Record<string, unknown>) {
-          const cookie = { name, value: "", ...withAuthCookieOptions(options), maxAge: 0 };
+          const cookie = {
+            name,
+            value: "",
+            ...withEdgeAuthCookieOptions(options),
+            maxAge: 0,
+          };
           request.cookies.set(cookie);
           response = NextResponse.next({
             request: {

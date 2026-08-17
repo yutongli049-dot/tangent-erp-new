@@ -14,14 +14,9 @@ const withPWA = withPWAInit({
   },
 });
 
-// ✅ 修复：移除了 ": NextConfig" 显式类型注解，避免因为 turbopack 属性导致 TS 报错
 const nextConfig = {
   // @ts-ignore: 忽略 turbopack 属性的类型报错
   turbopack: {},
-
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
+} satisfies NextConfig;
 
 export default withPWA(nextConfig);
