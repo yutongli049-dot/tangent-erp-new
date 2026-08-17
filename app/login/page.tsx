@@ -54,8 +54,11 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Tangent ERP
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500">
             Internal Management System
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            登录后保持 60 天，打开 PWA 无需重新登录
           </p>
         </div>
 

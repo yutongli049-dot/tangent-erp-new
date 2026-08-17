@@ -41,7 +41,7 @@ export async function getDashboardStats(businessId: string) {
       .select(`
         id, start_time, end_time, duration, status, location, student_id, business_unit_id,
         student:students (
-          id, name, student_code, teacher, subject, balance, payment_type, currency
+          id, name, student_code, teacher, subject, balance, payment_type, currency, level
         )
       `)
       .in("business_unit_id", unitFilter)
@@ -68,7 +68,9 @@ export async function getDashboardStats(businessId: string) {
       if (normalizeCurrency(s.currency) === "RMB") unearnedRevenueRmb += value;
       else unearnedRevenue += value;
     }
-    if (isPaymentAlert(bal, s.payment_type)) lowBalanceStudents.push(s);
+    if (isPaymentAlert(bal, s.payment_type, { businessUnitId: s.business_unit_id })) {
+      lowBalanceStudents.push(s);
+    }
   });
 
   const byCurrency = finance.byCurrency || emptyDualTotals();

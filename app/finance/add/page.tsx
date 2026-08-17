@@ -14,20 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Camera, Loader2, CheckCircle2, Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine, User, Clock } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, Camera, Loader2, CheckCircle2, User, Clock } from "lucide-react";
 import { toast } from "sonner"; 
 import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency"; 
-
-// 底部导航项
-const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
-  <Link href={href} className={`flex flex-col items-center justify-center gap-1 flex-1 active:scale-95 transition-transform py-2 group ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
-    <div className={`h-6 w-6 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}>
-      <Icon className="h-full w-full" />
-    </div>
-    <span className={`text-[10px] font-medium ${isActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-800'}`}>{label}</span>
-  </Link>
-);
+import { MobileDock } from "@/components/MobileDock";
 
 export default function AddTransactionPage() {
   const router = useRouter();
@@ -333,18 +323,7 @@ export default function AddTransactionPage() {
         </div>
       </main>
 
-      {/* Mobile Dock */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 pb-safe pt-1 px-6 z-50">
-        <div className="flex justify-between items-center">
-          <TabItem href="/" icon={HomeIcon} label="首页" isActive={false} />
-          <TabItem href="/students" icon={Users} label="学生" isActive={false} />
-          <Link href="/finance/add" className="active:scale-90 transition-transform -mt-8">
-             <div className="h-14 w-14 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-400/50 border-4 border-slate-50"><PenLine className="h-6 w-6" /></div>
-          </Link>
-          <TabItem href="/bookings" icon={CalendarIcon} label="排课" isActive={false} />
-          <TabItem href="/finance" icon={FileBarChart} label="报表" isActive={true} />
-        </div>
-      </div>
+      <MobileDock />
     </div>
   );
 }

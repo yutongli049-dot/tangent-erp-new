@@ -1,6 +1,11 @@
 {
-  "name": "Tangent",
+  "name": "Tangent ERP",
   "short_name": "Tangent",
+  "description": "Sine Driving & Tangent business management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +20,18 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "shortcuts": [
+    {
+      "name": "极速排课",
+      "short_name": "排课",
+      "description": "Sine Driving 极速排课",
+      "url": "/bookings/quick",
+      "icons": [
+        {
+          "src": "/web-app-manifest-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

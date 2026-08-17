@@ -20,5 +20,19 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "极速排课",
+      "short_name": "排课",
+      "description": "Sine Driving 极速排课",
+      "url": "/bookings/quick",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { 
-  ArrowLeft, User, BookOpen, Wallet, Clock, 
-  Home as HomeIcon, Users, Calendar as CalendarIcon, FileBarChart, PenLine,
+  ArrowLeft, User, BookOpen, Wallet, Clock, Calendar as CalendarIcon,
   History, ArrowUpRight, ArrowDownRight, MapPin, CheckCircle2
 } from "lucide-react";
 import { format } from "date-fns";
@@ -17,16 +16,7 @@ import EditStudentButton from "./edit-button";
 import { getStudentHistory } from "../actions";
 import { isPaymentAlert, getPaymentTypeLabel } from "@/lib/student-payment";
 import { currencySymbol, formatMoney } from "@/lib/currency";
-
-// 底部导航 (保持一致)
-const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
-  <Link href={href} className={`flex flex-col items-center justify-center gap-1 flex-1 active:scale-95 transition-transform py-2 group ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
-    <div className={`h-6 w-6 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}>
-      <Icon className="h-full w-full" />
-    </div>
-    <span className={`text-[10px] font-medium ${isActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-800'}`}>{label}</span>
-  </Link>
-);
+import { MobileDock } from "@/components/MobileDock";
 
 export default async function StudentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -45,7 +35,10 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
   const { bookings, transactions } = await getStudentHistory(id);
 
   const estimatedValue = (student.balance || 0) * (student.hourly_rate || 0);
-  const paymentAlert = isPaymentAlert(Number(student.balance), student.payment_type);
+  const paymentAlert = isPaymentAlert(Number(student.balance), student.payment_type, {
+    businessUnitId: student.business_unit_id,
+    level: student.level,
+  });
   const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${student.name}&backgroundColor=e5e7eb,d1d5db,9ca3af`;
 
   return (
@@ -189,18 +182,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
 
       </main>
 
-      {/* Dock */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 pb-safe pt-1 px-6 z-50">
-        <div className="flex justify-between items-center">
-          <TabItem href="/" icon={HomeIcon} label="首页" isActive={false} />
-          <TabItem href="/students" icon={Users} label="学生" isActive={true} />
-          <Link href="/finance/add" className="active:scale-90 transition-transform -mt-8">
-             <div className="h-14 w-14 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-400/50 border-4 border-slate-50"><PenLine className="h-6 w-6" /></div>
-          </Link>
-          <TabItem href="/bookings" icon={CalendarIcon} label="排课" isActive={false} />
-          <TabItem href="/finance" icon={FileBarChart} label="报表" isActive={false} />
-        </div>
-      </div>
+      <MobileDock />
     </div>
   );
 }

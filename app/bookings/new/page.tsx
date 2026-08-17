@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useBusiness } from "@/contexts/BusinessContext";
@@ -9,22 +9,27 @@ import { createClient } from "@/lib/supabase/client";
 
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { MobileDock } from "@/components/MobileDock";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Trash2, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Trash2, Sparkles, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { DualTimezonePreview } from "@/components/DualTimezoneTime";
 import { CreatableCombobox } from "@/components/CreatableCombobox";
-import { getTodayInNZ } from "@/lib/timezone";
+import { addCalendarDaysInNZ, getTodayInNZ } from "@/lib/timezone";
 import {
+  DEFAULT_DRIVING_COACH,
+  DEFAULT_DRIVING_SUBJECT,
   DRIVING_COACHES,
   DRIVING_SUBJECTS,
+  defaultCoachForEmail,
   parseDrivingBookingText,
   type DrivingCoach,
 } from "@/lib/driving-booking-text";
+import { cn } from "@/lib/utils";
 import {
   fetchFormSuggestions,
   mergeLocationOptions,
@@ -52,7 +57,7 @@ export default function NewBookingPage() {
   const isDrivingSchool = currentBusinessId.includes('sine');
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-10">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-24 md:pb-10">
       <div className="hidden md:block"><Navbar /></div>
       <main className="mx-auto max-w-xl px-4 md:px-6 py-5 md:py-8">
         
@@ -75,6 +80,7 @@ export default function NewBookingPage() {
         )}
 
       </main>
+      <MobileDock />
     </div>
   );
 }
@@ -88,6 +94,7 @@ function RecurrenceSelector({
   time, setTime,
   weeklySchedule, setWeeklySchedule,
   customIntervalWeeks, setCustomIntervalWeeks,
+  hideTime = false,
 }: {
   repeatMode: string;
   setRepeatMode: (v: string) => void;
@@ -103,6 +110,7 @@ function RecurrenceSelector({
   setWeeklySchedule: (v: { dayOfWeek: string; time: string }[]) => void;
   customIntervalWeeks: string;
   setCustomIntervalWeeks: (v: string) => void;
+  hideTime?: boolean;
 }) {
   const recurring = isRecurringMode(repeatMode);
   const showSingleTime = usesSingleTimePicker(repeatMode);
@@ -111,7 +119,7 @@ function RecurrenceSelector({
   return (
     <div className="col-span-2 space-y-3 bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/50 transition-all">
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className={hideTime ? "col-span-2 space-y-2" : "space-y-2"}>
           <Label className="text-xs text-indigo-700 font-bold uppercase pl-1 flex items-center gap-1"><Repeat className="h-3 w-3"/> 排课模式</Label>
           <Select value={repeatMode} onValueChange={setRepeatMode}>
             <SelectTrigger className={`h-12 rounded-xl bg-white ${recurring ? 'border-indigo-400 font-bold text-indigo-700 shadow-sm' : 'border-slate-200'}`}>
@@ -125,7 +133,7 @@ function RecurrenceSelector({
           </Select>
         </div>
         
-        {showSingleTime && (
+        {showSingleTime && !hideTime && (
           <div className="space-y-2 animate-in fade-in zoom-in-95">
             <Label className="text-xs text-slate-500 font-bold pl-1">上课时间 (NZT)</Label>
             <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="h-12 rounded-xl bg-white" />
@@ -231,8 +239,9 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const [time, setTime] = useState("10:00");
   const [duration, setDuration] = useState("1");
   const [location, setLocation] = useState("");
-  const [subject, setSubject] = useState<string>(DRIVING_SUBJECTS[1]); // 限制性练车
-  const [coach, setCoach] = useState<DrivingCoach | "">("");
+  const [subject, setSubject] = useState<string>(DEFAULT_DRIVING_SUBJECT);
+  const [coach, setCoach] = useState<DrivingCoach | "">(DEFAULT_DRIVING_COACH);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState("");
   
   const [repeatMode, setRepeatMode] = useState("none");
@@ -261,6 +270,12 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     }
     loadSuggestions();
   }, [businessId, supabase]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCoach(defaultCoachForEmail(user?.email));
+    });
+  }, [supabase]);
 
   const applyMagicParse = (text: string, showToast = true) => {
     const parsed = parseDrivingBookingText(text, Number(duration) || 1);
@@ -340,9 +355,97 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     await submitBooking();
   };
 
+  const todayNz = getTodayInNZ();
+  const tomorrowNz = addCalendarDaysInNZ(todayNz, 1);
+  const dayAfterNz = addCalendarDaysInNZ(todayNz, 2);
+  const isCustomDate = date !== todayNz && date !== tomorrowNz && date !== dayAfterNz;
+
+  const openCustomCalendar = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === "function") el.showPicker();
+    else el.focus();
+  };
+
+  const DatePill = ({
+    label,
+    active,
+    onClick,
+  }: {
+    label: string;
+    active: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "h-9 flex-1 rounded-full px-3 text-xs font-bold transition-all active:scale-95",
+        active
+          ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
+          : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600"
+      )}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="mx-auto max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-sm sm:max-w-lg sm:p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Step 1: 时间前置（苹果日历流） */}
+        <div className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3 sm:p-4">
+          <Label className="flex items-center gap-1.5 pl-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <CalendarDays className="h-3.5 w-3.5" /> Step 1 · 日期与开始时间
+          </Label>
+          <div className="flex gap-2">
+            <DatePill label="今天" active={date === todayNz} onClick={() => setDate(todayNz)} />
+            <DatePill label="明天" active={date === tomorrowNz} onClick={() => setDate(tomorrowNz)} />
+            <DatePill label="后天" active={date === dayAfterNz} onClick={() => setDate(dayAfterNz)} />
+            <DatePill
+              label="自定义"
+              active={isCustomDate}
+              onClick={openCustomCalendar}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5 sm:col-span-1">
+              <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">日期 (NZT)</Label>
+              <Input
+                ref={dateInputRef}
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-12 rounded-xl bg-white"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">开始时间</Label>
+              <Input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="h-12 rounded-xl bg-white"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="pl-1 text-[11px] font-bold uppercase text-slate-500">时长</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  step="0.5"
+                  min="0.5"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="h-12 rounded-xl bg-white pr-8"
+                />
+                <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span>
+              </div>
+            </div>
+          </div>
+          {date && time && <DualTimezonePreview date={date} time={time} />}
+        </div>
+
         {/* Magic Input */}
         <div className="space-y-2 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-3 sm:p-4">
           <Label className="text-xs text-indigo-700 font-bold uppercase tracking-wider pl-1 flex items-center gap-1.5">
@@ -359,7 +462,6 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
               }}
               onKeyDown={handleMagicKeyDown}
               className="h-12 rounded-xl border-indigo-200 bg-white text-sm font-medium shadow-sm sm:text-base"
-              autoFocus
             />
             <Button
               type="button"
@@ -412,16 +514,8 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
                 placeholder="选择或输入地点"
               />
            </div>
-           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">首节日期 (Start Date)</Label><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-12 rounded-xl" /></div>
-              <div className="space-y-2"><Label className="text-xs text-slate-400 font-bold uppercase pl-1">单节时长 (Hours)</Label><div className="relative"><Input type="number" step="0.5" min="0.5" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-12 rounded-xl pr-8" /><span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">h</span></div></div>
-           </div>
            
-           {/* Zoom Selector */}
-           <RecurrenceSelector repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} time={time} setTime={setTime} weeklySchedule={weeklySchedule} setWeeklySchedule={setWeeklySchedule} customIntervalWeeks={customIntervalWeeks} setCustomIntervalWeeks={setCustomIntervalWeeks} />
-           {usesSingleTimePicker(repeatMode) && date && time && (
-             <DualTimezonePreview date={date} time={time} />
-           )}
+           <RecurrenceSelector hideTime repeatMode={repeatMode} setRepeatMode={setRepeatMode} endMode={endMode} setEndMode={setEndMode} repeatCount={repeatCount} setRepeatCount={setRepeatCount} endDate={endDate} setEndDate={setEndDate} time={time} setTime={setTime} weeklySchedule={weeklySchedule} setWeeklySchedule={setWeeklySchedule} customIntervalWeeks={customIntervalWeeks} setCustomIntervalWeeks={setCustomIntervalWeeks} />
         </div>
 
         <div className="space-y-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">

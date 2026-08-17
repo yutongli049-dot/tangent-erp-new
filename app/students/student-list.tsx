@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PAYMENT_TYPE_OPTIONS, isPaymentAlert } from "@/lib/student-payment";
+import { PAYMENT_TYPE_OPTIONS, isPayAsYouGoDriving, isPaymentAlert } from "@/lib/student-payment";
 import { CURRENCY_OPTIONS, currencySymbol, type Currency } from "@/lib/currency";
 
 export function StudentList({ students }: { students: any[] }) {
@@ -168,8 +168,15 @@ export function StudentList({ students }: { students: any[] }) {
         .filter((b: any) => b.status === 'confirmed')
         .reduce((sum: number, b: any) => sum + Number(b.duration), 0);
       const unscheduledHours = Number((totalBalance - scheduledHours).toFixed(1));
-      const paymentAlert = isPaymentAlert(totalBalance, student.payment_type);
-      const isOverScheduled = unscheduledHours < 0;
+      const payAsYouGo = isPayAsYouGoDriving({
+        businessUnitId: student.business_unit_id ?? currentBusinessId,
+        level: student.level,
+      });
+      const paymentAlert = isPaymentAlert(totalBalance, student.payment_type, {
+        businessUnitId: student.business_unit_id ?? currentBusinessId,
+        level: student.level,
+      });
+      const isOverScheduled = !payAsYouGo && unscheduledHours < 0;
 
       return (
         <div key={student.id} className="group flex flex-col md:flex-row md:items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 hover:border-indigo-300 hover:shadow-md transition-all gap-4">

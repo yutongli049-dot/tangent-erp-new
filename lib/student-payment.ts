@@ -1,4 +1,6 @@
 /** 学员缴费类型（students.payment_type） */
+import { isDrivingSchoolBusiness } from "@/lib/business";
+
 export type PaymentType = "single" | "monthly" | "ten_sessions" | "term" | "custom";
 
 export const PAYMENT_TYPE_OPTIONS: { value: PaymentType; label: string }[] = [
@@ -15,14 +17,29 @@ export function getPaymentTypeLabel(type: string | null | undefined): string {
   return PAYMENT_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "一月一缴";
 }
 
+export type PaymentContext = {
+  businessUnitId?: string | null;
+  level?: string | null;
+};
+
+/** 驾校一单一结：不按预付余额做欠费判定 */
+export function isPayAsYouGoDriving(ctx?: PaymentContext): boolean {
+  if (isDrivingSchoolBusiness(ctx?.businessUnitId)) return true;
+  if (typeof ctx?.level === "string" && /driving/i.test(ctx.level)) return true;
+  return false;
+}
+
 /**
  * 学员列表「欠费」红标 / 待续费侧栏
  * 仅 balance < 0；balance === 0 视为正常
+ * 驾校一单一结不显示负余额欠费报警
  */
 export function isPaymentAlert(
   balance: number,
-  _paymentType?: string | null
+  _paymentType?: string | null,
+  ctx?: PaymentContext
 ): boolean {
+  if (isPayAsYouGoDriving(ctx)) return false;
   return Number(balance) < 0;
 }
 
@@ -31,12 +48,15 @@ export function isPaymentAlert(
  * - single：仅 balance < 0
  * - 其他预付费：balance <= 0
  * - balance > 0：绝对不显示（禁止用累计待消课时误标）
+ * - 驾校一单一结：不显示
  */
 export function isBookingUnpaid(
   balance: number,
   paymentType: string | null | undefined,
-  _cumulativeUsage?: number
+  _cumulativeUsage?: number,
+  ctx?: PaymentContext
 ): boolean {
+  if (isPayAsYouGoDriving(ctx)) return false;
   const bal = Number(balance);
   if (bal > 0) return false;
   const type = paymentType || DEFAULT_PAYMENT_TYPE;

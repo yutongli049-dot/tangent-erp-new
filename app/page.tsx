@@ -10,16 +10,18 @@ import { Navbar } from "@/components/Navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  TrendingUp, PiggyBank, PenLine, 
+  TrendingUp, PiggyBank, 
   Loader2, MapPin, 
   Wallet, AlertCircle, Sun, Moon, Calendar as CalendarIcon, 
-  Home as HomeIcon, ArrowUpRight, Clock, User, BookOpen,
-  Users, FileBarChart, LogOut, Check, Building2
+  ArrowUpRight, Clock, User, BookOpen,
+  LogOut, Check, Building2, Plus, Zap
 } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { format, isSameDay } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { isBookingUnpaid } from "@/lib/student-payment";
+import { isDrivingSchoolBusiness } from "@/lib/business";
+import { MobileDock } from "@/components/MobileDock";
 
 // 简单的下拉菜单组件
 function MobileUserMenu({ user, currentLabel, businesses, onSwitch, onSignOut }: any) {
@@ -171,19 +173,16 @@ export default function Home() {
     studentUsage[sid] = newUsage;
 
     // 仅按缴费类型 + 余额判定；balance > 0 绝不标「待缴费」
-    const isUnpaid = isBookingUnpaid(balance, paymentType);
+    const isUnpaid = isBookingUnpaid(balance, paymentType, undefined, {
+      businessUnitId: b.business_unit_id,
+      level: b.student?.level,
+    });
     
     return { ...b, isUnpaid };
   });
 
-  const TabItem = ({ href, icon: Icon, label, isActive }: any) => (
-    <Link href={href} className={`flex flex-col items-center justify-center gap-1 flex-1 active:scale-95 transition-transform py-2 group ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
-      <div className={`h-6 w-6 ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} transition-colors`}>
-        <Icon className="h-full w-full" />
-      </div>
-      <span className={`text-[10px] font-medium ${isActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-800'}`}>{label}</span>
-    </Link>
-  );
+  const driving = isDrivingSchoolBusiness(currentBusinessId);
+  const quickBookHref = driving ? "/bookings/quick" : "/bookings/new";
 
   return (
     <>
@@ -355,10 +354,17 @@ export default function Home() {
           
           <div className="md:col-span-2 flex flex-col">
              <div className="sticky top-0 bg-slate-50 z-30 py-4 border-b border-slate-100/50 mb-2 shadow-[0_4px_10px_-10px_rgba(0,0,0,0.1)]">
-               <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                 <CalendarIcon className="h-5 w-5 text-indigo-600" />
-                 待办课程 <span className="text-slate-400 font-normal text-xs ml-1">({futureBookings.length})</span>
-               </h3>
+               <div className="flex items-center justify-between gap-3">
+                 <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                   <CalendarIcon className="h-5 w-5 text-indigo-600" />
+                   待办课程 <span className="text-slate-400 font-normal text-xs ml-1">({futureBookings.length})</span>
+                 </h3>
+                 <Link href={quickBookHref} className="md:hidden shrink-0">
+                   <Button className="h-9 rounded-full bg-indigo-600 px-3 text-xs font-black shadow-md shadow-indigo-200 hover:bg-indigo-700">
+                     <Plus className="mr-1 h-4 w-4" /> 极速排课
+                   </Button>
+                 </Link>
+               </div>
              </div>
 
              <div className="min-h-[200px]">
@@ -437,8 +443,12 @@ export default function Home() {
              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-900 mb-4">快捷操作</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link href="/bookings/new"><Button className="w-full bg-slate-900 h-12 rounded-xl shadow-lg shadow-slate-200">排课</Button></Link>
-                  <Link href="/finance/add"><Button className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl shadow-lg shadow-indigo-100">记账</Button></Link>
+                  <Link href={quickBookHref}>
+                    <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 font-black">
+                      <Zap className="mr-1.5 h-4 w-4" /> 极速排课
+                    </Button>
+                  </Link>
+                  <Link href="/finance/add"><Button className="w-full bg-slate-900 hover:bg-slate-800 h-12 rounded-xl shadow-lg shadow-slate-200">记账</Button></Link>
                 </div>
              </div>
              {!loading && stats.lowBalanceStudents.length > 0 && (
@@ -462,20 +472,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- PART 3: MOBILE DOCK --- */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/60 pb-safe pt-1 px-6 z-50">
-          <div className="flex justify-between items-center">
-            <TabItem href="/" icon={HomeIcon} label="首页" isActive={true} />
-            <TabItem href="/students" icon={Users} label="学生" isActive={false} />
-            <Link href="/finance/add" className="active:scale-90 transition-transform -mt-8">
-               <div className="h-14 w-14 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg shadow-slate-400/50 border-4 border-slate-50">
-                 <PenLine className="h-6 w-6" />
-               </div>
-            </Link>
-            <TabItem href="/bookings" icon={CalendarIcon} label="排课" isActive={false} />
-            <TabItem href="/finance" icon={FileBarChart} label="报表" isActive={false} />
-          </div>
-        </div>
+        <MobileDock />
 
       </main>
     </>

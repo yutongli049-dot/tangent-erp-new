@@ -107,10 +107,10 @@ export function Navbar() {
             <DropdownMenuLabel className="px-3 py-1.5 text-xs text-slate-400 font-normal uppercase tracking-wider">
               排课 (Bookings)
             </DropdownMenuLabel>
-            <Link href="/bookings/new">
+            <Link href="/bookings/quick">
               <DropdownMenuItem className="rounded-lg px-3 py-2 cursor-pointer">
                 <PlusCircle className="mr-2 h-4 w-4 text-amber-500" />
-                新建预约 (New)
+                极速排课 (Quick)
               </DropdownMenuItem>
             </Link>
             <Link href="/bookings">

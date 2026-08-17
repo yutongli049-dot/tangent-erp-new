@@ -16,6 +16,20 @@ export type DrivingSubject = (typeof DRIVING_SUBJECTS)[number];
 export const DRIVING_COACHES = ["牛教练", "童教练"] as const;
 export type DrivingCoach = (typeof DRIVING_COACHES)[number];
 
+export const DEFAULT_DRIVING_SUBJECT: DrivingSubject = "限制性练车";
+export const DEFAULT_DRIVING_COACH: DrivingCoach = "牛教练";
+
+/** 登录邮箱 → 默认教练；未匹配则兜底牛教练 */
+export const COACH_BY_EMAIL: Record<string, DrivingCoach> = {
+  "henry.liu.akl@gmail.com": "牛教练",
+  "yutongli049@gmail.com": "童教练",
+};
+
+export function defaultCoachForEmail(email?: string | null): DrivingCoach {
+  if (!email) return DEFAULT_DRIVING_COACH;
+  return COACH_BY_EMAIL[email.trim().toLowerCase()] ?? DEFAULT_DRIVING_COACH;
+}
+
 /** 表单下拉仍兼容的旧 label */
 export const LEGACY_SUBJECT_MAP: Record<string, DrivingSubject> = {
   "道路熟悉 (Familiarization)": "道路熟悉练车",
