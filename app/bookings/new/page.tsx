@@ -19,7 +19,7 @@ import { ArrowLeft, Loader2, MapPin, Car, DollarSign, Repeat, CalendarCheck, Tra
 import { toast } from "sonner";
 import { DualTimezonePreview } from "@/components/DualTimezoneTime";
 import { CreatableCombobox } from "@/components/CreatableCombobox";
-import { addCalendarDaysInNZ, getTodayInNZ } from "@/lib/timezone";
+import { addCalendarDaysInNZ, getTodayInNZ, utcToNzTimeStr } from "@/lib/timezone";
 import {
   DEFAULT_DRIVING_COACH,
   DEFAULT_DRIVING_SUBJECT,
@@ -32,8 +32,11 @@ import {
 import { cn } from "@/lib/utils";
 import {
   fetchFormSuggestions,
+  formatDrivingPrefillSummary,
   mergeLocationOptions,
   partitionStudentsByActivity,
+  searchDrivingStudentsWithLastBooking,
+  type DrivingStudentPrefill,
   type StudentWithMeta,
 } from "@/lib/form-suggestions";
 import {
@@ -226,6 +229,92 @@ function RecurrenceSelector({
   );
 }
 
+function DrivingStudentPicker({
+  businessId,
+  value,
+  onChange,
+  onSelectPrefill,
+}: {
+  businessId: string;
+  value: string;
+  onChange: (value: string) => void;
+  onSelectPrefill: (row: DrivingStudentPrefill) => void;
+}) {
+  const supabase = createClient();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<DrivingStudentPrefill[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const handle = window.setTimeout(async () => {
+      setLoading(true);
+      const rows = await searchDrivingStudentsWithLastBooking(
+        supabase,
+        businessId,
+        value
+      );
+      if (!cancelled) {
+        setResults(rows);
+        setLoading(false);
+      }
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [businessId, supabase, value, open]);
+
+  return (
+    <div className="relative">
+      <Input
+        placeholder="例如: 8011 或 Alex"
+        value={value}
+        autoComplete="off"
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => window.setTimeout(() => setOpen(false), 160)}
+        className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg"
+      />
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+          {loading && results.length === 0 ? (
+            <div className="px-3 py-3 text-xs text-slate-400">查找学员与上次偏好…</div>
+          ) : results.length === 0 ? (
+            <div className="px-3 py-3 text-xs text-slate-400">
+              {value.trim() ? "无匹配学员，提交时将自动建档" : "输入编号或姓名开始联想"}
+            </div>
+          ) : (
+            results.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-indigo-50"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelectPrefill(row);
+                  setOpen(false);
+                }}
+              >
+                <span className="text-sm font-bold text-slate-800">
+                  {row.student_code ? `${row.student_code} ${row.name}` : row.name}
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  {formatDrivingPrefillSummary(row).split(" · ").slice(1).join(" · ") || "暂无历史排课"}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ==========================================
 // 🚗 驾校专属：极速排课表单
 // ==========================================
@@ -301,6 +390,39 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     setActualRate(checked ? "85" : "75");
   };
 
+  const applyStudentPrefill = (row: DrivingStudentPrefill) => {
+    const nextId = row.student_code?.trim() || row.name;
+    setIdentifier(nextId);
+
+    const last = row.lastBooking;
+    if (!last) {
+      toast.success("已选择学员，暂无历史偏好可回填");
+      return;
+    }
+
+    if (last.location) setLocation(last.location);
+    if (last.useInstructorCar != null) {
+      setUseInstructorCar(last.useInstructorCar);
+      if (!(last.actualRate != null && last.actualRate > 0)) {
+        setActualRate(last.useInstructorCar ? "85" : "75");
+      }
+    }
+    if (last.actualRate != null && last.actualRate > 0) {
+      setActualRate(String(last.actualRate));
+    }
+    if (last.startTime) setTime(utcToNzTimeStr(last.startTime));
+    if (last.duration != null && last.duration > 0) setDuration(String(last.duration));
+    if (last.subject) setSubject(last.subject);
+    if (last.coach && (DRIVING_COACHES as readonly string[]).includes(last.coach)) {
+      setCoach(last.coach as DrivingCoach);
+    }
+    if (last.needPickup) setNeedPickup(true);
+    if (last.pickupAddress) setPickupAddress(last.pickupAddress);
+    if (last.plateNumber) setPlateNumber(last.plateNumber);
+
+    toast.success("已回填上次排课偏好，可直接提交或微调");
+  };
+
   const submitBooking = async () => {
     if (!identifier || !date || !location || !subject) { toast.warning("请补全必填信息"); return; }
     if (usesSingleTimePicker(repeatMode) && !time) { toast.warning("请填写时间"); return; }
@@ -358,7 +480,12 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   const todayNz = getTodayInNZ();
   const tomorrowNz = addCalendarDaysInNZ(todayNz, 1);
   const dayAfterNz = addCalendarDaysInNZ(todayNz, 2);
-  const isCustomDate = date !== todayNz && date !== tomorrowNz && date !== dayAfterNz;
+  const nextWeekNz = addCalendarDaysInNZ(todayNz, 7);
+  const isCustomDate =
+    date !== todayNz &&
+    date !== tomorrowNz &&
+    date !== dayAfterNz &&
+    date !== nextWeekNz;
 
   const openCustomCalendar = () => {
     const el = dateInputRef.current;
@@ -379,8 +506,8 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "h-9 flex-1 rounded-full px-3 text-xs font-bold transition-all active:scale-95",
+        className={cn(
+          "h-9 w-full rounded-full px-2 text-[11px] font-bold transition-all active:scale-95 sm:text-xs",
         active
           ? "bg-indigo-600 text-white shadow-sm shadow-indigo-200"
           : "bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600"
@@ -398,10 +525,11 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           <Label className="flex items-center gap-1.5 pl-1 text-xs font-bold uppercase tracking-wider text-indigo-700">
             <CalendarDays className="h-3.5 w-3.5" /> Step 1 · 日期与开始时间
           </Label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             <DatePill label="今天" active={date === todayNz} onClick={() => setDate(todayNz)} />
             <DatePill label="明天" active={date === tomorrowNz} onClick={() => setDate(tomorrowNz)} />
             <DatePill label="后天" active={date === dayAfterNz} onClick={() => setDate(dayAfterNz)} />
+            <DatePill label="下周今天" active={date === nextWeekNz} onClick={() => setDate(nextWeekNz)} />
             <DatePill
               label="自定义"
               active={isCustomDate}
@@ -453,7 +581,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           </Label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Input
-              placeholder="输入如：3045 限制性练车 panmure 教练车 牛 85🔪"
+              placeholder="输入如：3045 全驾照练车 panmure 教练车 牛 85🔪"
               value={magicInput}
               onChange={(e) => {
                 const v = e.target.value;
@@ -479,7 +607,12 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
 
         <div className="space-y-2">
           <Label className="text-xs text-indigo-500 font-bold uppercase tracking-wider pl-1">学员编号或姓名 *</Label>
-          <Input placeholder="例如: 8011 或 Alex" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="h-12 rounded-xl border-slate-200 bg-indigo-50/30 font-bold text-lg" />
+          <DrivingStudentPicker
+            businessId={businessId}
+            value={identifier}
+            onChange={setIdentifier}
+            onSelectPrefill={applyStudentPrefill}
+          />
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-100">
