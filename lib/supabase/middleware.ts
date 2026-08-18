@@ -1,23 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE_MAX_AGE } from "@/lib/supabase/auth-options";
+
+const AUTH_COOKIE_MAX_AGE = 60 * 24 * 60 * 60;
 
 function isAuthTokenCookie(name: string) {
   return name.includes("-auth-token");
-}
-
-function withRefreshCookieOptions(options: Record<string, unknown> = {}) {
-  const maxAge =
-    typeof options.maxAge === "number" && options.maxAge > 0
-      ? options.maxAge
-      : AUTH_COOKIE_MAX_AGE;
-  return {
-    ...options,
-    path: "/",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    maxAge,
-  };
 }
 
 export async function updateSession(request: NextRequest) {
@@ -34,16 +21,20 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           supabaseResponse = NextResponse.next({
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) => {
-            supabaseResponse.cookies.set(
-              name,
-              value,
-              withRefreshCookieOptions(options ?? {})
-            );
+            supabaseResponse.cookies.set(name, value, {
+              ...(options ?? {}),
+              maxAge: AUTH_COOKIE_MAX_AGE,
+              sameSite: "lax",
+              path: "/",
+              secure: process.env.NODE_ENV === "production",
+            });
           });
         },
       },
