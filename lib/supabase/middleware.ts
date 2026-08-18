@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 60;
+import { AUTH_COOKIE_MAX_AGE } from "@/lib/supabase/auth-options";
 
 function isAuthTokenCookie(name: string) {
   return name.includes("-auth-token");
@@ -16,6 +15,7 @@ function withRefreshCookieOptions(options: Record<string, unknown> = {}) {
     ...options,
     path: "/",
     sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
     maxAge,
   };
 }
@@ -39,7 +39,11 @@ export async function updateSession(request: NextRequest) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) => {
-            supabaseResponse.cookies.set(name, value, withRefreshCookieOptions(options ?? {}));
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              withRefreshCookieOptions(options ?? {})
+            );
           });
         },
       },
@@ -52,10 +56,10 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isLogin = pathname.startsWith("/login");
-  const hasAuthCookie = request.cookies.getAll().some((cookie) => isAuthTokenCookie(cookie.name));
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((cookie) => isAuthTokenCookie(cookie.name));
 
-  // PWA 冷启动 / 切回前台时 access token 可能正在刷新：
-  // 只要本地还留着 auth cookie，就不要立刻踢回登录页。
   if (!user && !isLogin && !hasAuthCookie) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

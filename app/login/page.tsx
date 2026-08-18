@@ -36,6 +36,12 @@ export default function LoginPage() {
       return;
     }
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (remember && session) {
+      const { persistSessionBackup } = await import("@/lib/supabase/session-backup");
+      persistSessionBackup(session);
+    }
+
     router.replace("/");
     router.refresh();
   };

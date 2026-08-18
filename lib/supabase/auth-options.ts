@@ -4,6 +4,7 @@ export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 60;
 export const authCookieOptions = {
   path: "/",
   sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
   maxAge: AUTH_COOKIE_MAX_AGE,
 };
 
@@ -23,5 +24,9 @@ export function withAuthCookieOptions(options: Record<string, unknown> = {}) {
         : AUTH_COOKIE_MAX_AGE,
     path: (options.path as string) || "/",
     sameSite: (options.sameSite as "lax" | "strict" | "none") || "lax",
+    secure:
+      typeof options.secure === "boolean"
+        ? options.secure
+        : process.env.NODE_ENV === "production",
   };
 }
