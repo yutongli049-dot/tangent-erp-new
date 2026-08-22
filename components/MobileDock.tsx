@@ -62,26 +62,30 @@ export function MobileDock() {
   const isFinanceAdd = pathname.startsWith("/finance/add");
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 w-full max-w-full overflow-x-hidden border-t border-slate-200/60 bg-white/95 px-4 pb-safe pt-1 backdrop-blur-md">
-      <div className="flex items-center justify-between">
+    <div className="fixed bottom-0 left-0 right-0 z-50 w-full max-w-full overflow-visible border-t border-slate-200/60 bg-white/95 px-4 pb-[env(safe-area-inset-bottom,16px)] pt-1 backdrop-blur-md md:hidden">
+      <div className="flex items-end justify-between overflow-visible">
         <TabItem href="/" icon={HomeIcon} label="首页" isActive={isHome} />
         <TabItem href="/students" icon={Users} label="学生" isActive={isStudents} />
 
         {driving ? (
           <Link
             href="/bookings/quick"
-            className="-mt-8 flex flex-col items-center active:scale-90 transition-transform"
+            className="relative -top-5 flex flex-col items-center justify-center active:scale-90 transition-transform"
             aria-label="极速排课"
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-slate-50 bg-indigo-600 text-white shadow-lg shadow-indigo-400/50">
               <Plus className="h-7 w-7" strokeWidth={2.5} />
             </div>
-            <span className="mt-0.5 text-[10px] font-black tracking-tight text-indigo-600">
+            <span className="mt-1 text-[10px] font-semibold leading-none text-indigo-600">
               极速排课
             </span>
           </Link>
         ) : (
-          <Link href="/finance/add" className="-mt-8 active:scale-90 transition-transform">
+          <Link
+            href="/finance/add"
+            className="relative -top-5 flex flex-col items-center justify-center active:scale-90 transition-transform"
+            aria-label="记一笔"
+          >
             <div className="flex h-14 w-14 items-center justify-center rounded-full border-4 border-slate-50 bg-slate-900 text-white shadow-lg shadow-slate-400/50">
               <PenLine className="h-6 w-6" />
             </div>

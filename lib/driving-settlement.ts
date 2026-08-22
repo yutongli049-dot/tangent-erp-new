@@ -24,6 +24,7 @@ type LessonBooking = {
   duration: number;
   actual_rate?: number | null;
   business_unit_id?: string | null;
+  start_time?: string | null;
   student?: LessonStudent;
 };
 
@@ -57,7 +58,7 @@ export async function recordDrivingLessonTuition(
     amount,
     category: "Tuition",
     description: `消课实收 ${marker} ${identifier} × ${duration}h`,
-    transaction_date: new Date().toISOString(),
+    transaction_date: booking.start_time ?? new Date().toISOString(),
     business_unit_id: booking.business_unit_id,
     created_by: createdBy,
     student_id: booking.student_id,

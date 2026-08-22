@@ -68,7 +68,7 @@ const DURATION_PRESETS = [
 ] as const;
 
 const FIELD =
-  "h-10 w-full min-w-0 rounded-xl border-slate-200 bg-white text-sm";
+  "h-11 w-full min-w-0 rounded-xl border-slate-200 bg-white text-sm";
 
 function durationSelectValue(value: string) {
   const n = Number(value);
@@ -87,8 +87,8 @@ export default function NewBookingPage() {
     return (
       <div className="flex h-dvh max-h-dvh w-full max-w-full flex-col overflow-hidden overscroll-none bg-slate-50 font-sans text-slate-900">
         <div className="hidden shrink-0 md:block"><Navbar /></div>
-        <main className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col px-3 pt-2 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:px-6 md:py-4">
-          <div className="mb-2 flex shrink-0 items-center gap-2">
+        <main className="mx-auto flex min-h-0 w-full max-w-xl flex-1 flex-col px-4 pt-3 pb-[calc(5rem+env(safe-area-inset-bottom,16px))] md:px-6 md:py-4">
+          <div className="mb-3 flex shrink-0 items-center gap-2">
             <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl border-slate-200 bg-white shadow-sm" onClick={() => router.back()}>
               <ArrowLeft className="h-5 w-5 text-slate-600" />
             </Button>
@@ -417,7 +417,10 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     setIdentifier(nextId);
 
     const last = row.lastBooking;
-    if (!last) return;
+    if (!last) {
+      setSubject(DEFAULT_DRIVING_SUBJECT);
+      return;
+    }
 
     if (last.location) setLocation(last.location);
     if (last.useInstructorCar != null) {
@@ -431,7 +434,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
     }
     if (last.startTime) setTime(utcToNzTimeStr(last.startTime));
     if (last.duration != null && last.duration > 0) setDuration(String(last.duration));
-    if (last.subject) setSubject(last.subject);
+    setSubject(last.subject?.trim() || DEFAULT_DRIVING_SUBJECT);
     if (last.coach && (DRIVING_COACHES as readonly string[]).includes(last.coach)) {
       setCoach(last.coach as DrivingCoach);
     }
@@ -546,10 +549,10 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex min-h-0 flex-1 flex-col justify-between gap-2"
+      className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
-        <div className="grid w-full min-w-0 grid-cols-5 gap-1.5">
+      <div className="flex min-h-0 flex-1 flex-col justify-center gap-3.5 py-1">
+        <div className="grid w-full min-w-0 grid-cols-5 gap-2">
           <DatePill label="今天" active={date === todayNz} onClick={() => setDate(todayNz)} />
           <DatePill label="明天" active={date === tomorrowNz} onClick={() => setDate(tomorrowNz)} />
           <DatePill label="后天" active={date === dayAfterNz} onClick={() => setDate(dayAfterNz)} />
@@ -557,7 +560,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           <DatePill label="自定义" active={isCustomDate} onClick={openCustomCalendar} />
         </div>
 
-        <div className="grid w-full min-w-0 grid-cols-3 gap-2">
+        <div className="grid w-full min-w-0 grid-cols-3 gap-3">
           <Input
             ref={dateInputRef}
             type="date"
@@ -619,7 +622,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           className={`${FIELD} border-indigo-200 bg-indigo-50/40`}
         />
 
-        <div className="grid w-full min-w-0 grid-cols-3 gap-2">
+        <div className="grid w-full min-w-0 grid-cols-3 gap-3">
           <DrivingStudentPicker
             businessId={businessId}
             value={identifier}
@@ -655,7 +658,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
           className={FIELD}
         />
 
-        <div className="grid w-full min-w-0 grid-cols-3 gap-2">
+        <div className="grid w-full min-w-0 grid-cols-3 gap-3">
           <Select
             value={useInstructorCar ? "instructor" : "own"}
             onValueChange={(v) => {
@@ -704,7 +707,7 @@ function DrivingBookingForm({ businessId, router }: { businessId: string, router
       <Button
         type="submit"
         disabled={isLoading}
-        className="h-11 w-full min-w-0 shrink-0 rounded-2xl bg-indigo-600 text-base font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98]"
+        className="mt-3 h-12 w-full min-w-0 shrink-0 rounded-2xl bg-indigo-600 text-base font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98]"
       >
         {isLoading ? (
           <>

@@ -288,7 +288,7 @@ export async function completeBooking(id: string, studentId: string, duration: n
   const { data: booking, error: fetchError } = await supabase
     .from("bookings")
     .select(`
-      id, status, student_id, duration, actual_rate, business_unit_id,
+      id, status, student_id, duration, actual_rate, business_unit_id, start_time,
       student:students ( id, name, student_code, hourly_rate, currency, level )
     `)
     .eq("id", id)
@@ -311,6 +311,7 @@ export async function completeBooking(id: string, studentId: string, duration: n
         duration: Number(booking.duration) || duration,
         actual_rate: booking.actual_rate,
         business_unit_id: booking.business_unit_id,
+        start_time: booking.start_time,
         student,
       },
       user?.id || ""
